@@ -35,6 +35,26 @@ bool MainWindow::usesTightLabels() const {
     return locale.startsWith("zh") || locale.startsWith("ru");
 }
 
+void MainWindow::refreshToolbarIcons() {
+    // Applying the initial widget style can send change events before setupUi finishes.
+    if (!toolbarIconsReady) return;
+#ifdef Q_OS_LINUX
+    const bool useTheme = Configs::dataManager->settingsRepo->use_system_toolbar_icons;
+#else
+    const bool useTheme = false;
+#endif
+    const auto setIcon = [useTheme](QToolButton *button, const QString &name, const QString &path) {
+        // Always resolve afresh: a previous theme may have supplied an icon that is now missing.
+        const QIcon bundled(path);
+        button->setIcon(useTheme ? QIcon::fromTheme(name, bundled) : bundled);
+    };
+    setIcon(ui->toolButton_program, QStringLiteral("system-run"), QStringLiteral(":/icon/b-system-run.png"));
+    setIcon(ui->toolButton_preferences, QStringLiteral("preferences-system"), QStringLiteral(":/icon/b-preferences.png"));
+    setIcon(ui->toolButton_testing, QStringLiteral("folder"), QStringLiteral(":/icon/b-testing-button.png"));
+    setIcon(ui->toolButton_routing, QStringLiteral("network-workgroup"), QStringLiteral(":/icon/b-network-routing.png"));
+    setIcon(ui->toolButton_tools, QStringLiteral("applications-utilities"), QStringLiteral(":/icon/b-tools-button.png"));
+}
+
 void MainWindow::applyTopBarMetrics() {
     const QList<QToolButton*> menuButtons = {
         ui->toolButton_program, ui->toolButton_preferences, ui->toolButton_testing,

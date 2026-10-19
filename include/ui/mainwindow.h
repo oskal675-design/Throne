@@ -454,6 +454,9 @@ private:
     void applyLogBrowserFont();
 
     void applyTopBarMetrics();
+
+    void refreshToolbarIcons();
+    bool toolbarIconsReady = false;
     bool usesTightLabels() const;
 
     QSize designMinimumSize;

@@ -185,6 +185,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
     themeManager()->ApplyTheme(Configs::dataManager->settingsRepo->theme);
     ui->setupUi(this);
+    toolbarIconsReady = true;
+    refreshToolbarIcons();
 
     setActionsData();
     loadShortcuts();
@@ -209,6 +211,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     });
 #endif
     connect(themeManager(), &ThemeManager::themeChanged, this, [=,this](const QString& theme){
+        refreshToolbarIcons();
         setLogHighlighter(themeUsesDarkLog(theme));
         applyLogBrowserFont();
         scheduleProxyListRefresh();

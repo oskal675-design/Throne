@@ -293,6 +293,7 @@ void MainWindow::dialog_message_impl(MwMessage cmd, const QStringList &args) {
 
     switch (cmd) {
     case MwMessage::UpdateSettings: {
+        refreshToolbarIcons();
         updateLogFilterFields();
         ui->actionTraffic_Stats->setVisible(!settings->disable_traffic_aggregation);
         refresh_traffic_graph_settings();

@@ -140,6 +140,7 @@ namespace Configs {
         QString simple_dl_url = "http://cachefly.cachefly.net/1mb.test";
         bool allow_beta_update = false;
         bool use_custom_icons = false;
+        bool use_system_toolbar_icons = false;
         bool follow_status_in_taskbar = true;
         bool skip_delete_confirmation = false;
         bool show_config_security = false;

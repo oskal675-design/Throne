@@ -77,6 +77,9 @@ void MainWindow::changeEvent(QEvent *event) {
         scheduleProxyListRefresh();
         refreshConnectionIcons();
     }
+    if (type == QEvent::ThemeChange || type == QEvent::StyleChange || type == QEvent::PaletteChange) {
+        refreshToolbarIcons();
+    }
     if (type == QEvent::WindowStateChange) {
         syncConnectionViewState();
     }

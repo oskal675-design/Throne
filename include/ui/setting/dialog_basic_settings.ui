@@ -838,6 +838,16 @@
               </property>
              </widget>
             </item>
+            <item row="3" column="0" colspan="2">
+             <widget class="QCheckBox" name="use_system_toolbar_icons">
+              <property name="toolTip">
+               <string>Use the desktop icon theme for toolbar buttons. Missing icons use the bundled icons.</string>
+              </property>
+              <property name="text">
+               <string>Use System Icons for Toolbar</string>
+              </property>
+             </widget>
+            </item>
             <item row="2" column="0">
              <widget class="QCheckBox" name="follow_status_in_taskbar">
               <property name="toolTip">
