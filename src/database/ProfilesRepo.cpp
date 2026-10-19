@@ -237,34 +237,42 @@ namespace Configs {
         }
         if (toAdd.isEmpty()) return true;
 
-        int n = toAdd.size();
-        int firstId = NewProfileIDRange(n);
-
+        const int n = toAdd.size();
         QMutexLocker locker(&mutex);
         if (dataManager->groupsRepo->GetGroup(gid) == nullptr) return false;
-        for (int i = 0; i < n; ++i) {
-            int id = firstId + i;
-            toAdd[i]->id = id;
-            if (toAdd[i]->outbound) toAdd[i]->outbound->profile_id = id;
-            toAdd[i]->gid = gid;
-            identityMap[id] = std::weak_ptr<Profile>(toAdd[i]);
+        int firstId;
+        try {
+            firstId = NewProfileIDRange(n);
+        } catch (const std::exception& e) {
+            NotifyError("ProfilesRepo::AddProfileBatch", e);
+            return false;
         }
+        if (firstId <= 0) return false;
 
         std::vector<ProfileInsertRow> rows;
         rows.reserve(n);
         for (int i = 0; i < n; ++i) {
-            rows.push_back(profileToInsertRow(toAdd[i].get(), toAdd[i]->id, toAdd[i]->gid));
+            rows.push_back(profileToInsertRow(toAdd[i].get(), firstId + i, gid));
         }
-        db.execBatchInsertProfiles(rows);
+        const auto inserted = db.execBatchInsertProfiles(rows);
 
+        // Failed rows stay new and retryable; never publish phantom IDs or cache entries.
         QList<int> profileIDs;
-        for (const auto& profile : toAdd) {
-            profileIDs << profile->id;
+        for (size_t i = 0; i < inserted; ++i) {
+            const int id = firstId + static_cast<int>(i);
+            const auto& profile = toAdd[static_cast<qsizetype>(i)];
+            profile->id = id;
+            if (profile->outbound) profile->outbound->profile_id = id;
+            profile->gid = gid;
+            identityMap[id] = std::weak_ptr<Profile>(profile);
+            profileIDs << id;
         }
-        group->AddProfileBatch(profileIDs);
-        dataManager->groupsRepo->Save(group);
+        if (!profileIDs.isEmpty()) {
+            group->AddProfileBatch(profileIDs);
+            dataManager->groupsRepo->Save(group);
+        }
 
-        return true;
+        return inserted == rows.size();
     }
 
     std::shared_ptr<Profile> ProfilesRepo::GetProfile(int id) const {

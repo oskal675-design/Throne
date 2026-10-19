@@ -156,12 +156,13 @@ namespace Subscription {
 
             void flush() {
                 if (chunk.isEmpty()) return;
-                if (Configs::dataManager->profilesRepo->AddProfileBatch(chunk, gid)) {
-                    for (qsizetype i = 0; i < chunk.size(); ++i) {
-                        entries[entryIndex[i]].id = chunk[i]->id;
-                        added << chunk[i]->id;
-                    }
-                    destination = chunk.first()->gid;
+                Configs::dataManager->profilesRepo->AddProfileBatch(chunk, gid);
+                // A later SQL chunk can fail after earlier chunks were saved.
+                for (qsizetype i = 0; i < chunk.size(); ++i) {
+                    if (chunk[i]->id < 0) continue;
+                    entries[entryIndex[i]].id = chunk[i]->id;
+                    added << chunk[i]->id;
+                    destination = chunk[i]->gid;
                 }
                 chunk.clear();
                 entryIndex.clear();
@@ -186,6 +187,8 @@ namespace Subscription {
                 }
                 return ids;
             }
+
+            [[nodiscard]] int addedCount() const { return static_cast<int>(added.size()); }
 
             QList<NewEntry> entries;
 
@@ -905,7 +908,8 @@ namespace Subscription {
 
         const int count = sink.stored();
         report.setImported(count);
-        if (const auto lost = static_cast<int>(sink.entries.size()) - count; lost > 0) {
+        const int lost = static_cast<int>(sink.entries.size()) - count;
+        if (lost > 0) {
             report.addFatal(QCoreApplication::translate("Validation", "%n profile(s) could not be saved to the database.", nullptr, lost));
         }
         if (count == 0) {
@@ -928,6 +932,10 @@ namespace Subscription {
         outcome.gid = gid;
         if (gid >= 0 && Configs::dataManager->groupsRepo->GetGroup(gid) == nullptr) {
             outcome = groupUpdaterMissingGroup(gid);
+        } else if (lost > 0) {
+            outcome.failure = UpdateOutcome::Failure::Database;
+            outcome.error = report.fatalReasons().join('\n');
+            outcome.addedIds = sink.storedIds();
         } else if (count == 0) {
             outcome.failure = UpdateOutcome::Failure::Empty;
             outcome.error = !emptyReason.isEmpty() ? emptyReason : report.fatalReasons().value(0, QStringLiteral("No profiles were found."));
@@ -1067,6 +1075,22 @@ namespace Subscription {
         sink.flush();
         MW_show_log(">>>>>>>> " + QObject::tr("Process complete, applying..."));
         report.setImported(sink.stored());
+
+        if (const int lost = static_cast<int>(sink.entries.size()) - sink.stored(); lost > 0) {
+            report.addFatal(QCoreApplication::translate("Validation", "%n profile(s) could not be saved to the database.", nullptr, lost));
+            result.failure = UpdateOutcome::Failure::Database;
+            result.error = report.fatalReasons().join('\n');
+            result.added = sink.addedCount();
+            // Keep earlier successful chunks, but never reconcile missing rows as a complete subscription.
+            // The explicit clear-before-update option may already have removed old profiles above.
+            sink.finish();
+            logImportReport(report);
+            if (surface != Surface::Log) ShowImportReport(reportTitle(surface, group->name), report);
+            Engine::EngineEvents::SubscriptionGroupChanged(group->id, disturbed);
+            Engine::EngineEvents::SubscriptionFinished(-1, true);
+            result.report = std::move(report);
+            return;
+        }
 
         QString change_text;
         if (cleared) {

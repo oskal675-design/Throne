@@ -197,17 +197,6 @@ namespace Configs {
             }
         }
 
-        // 14 bind params per row.
-        void execBatchInsertProfiles0(const std::vector<ProfileInsertRow>& rows) {
-            const size_t chunkSize = BATCH_LIMIT_WRITE / 14;
-            for (size_t off = 0; off < rows.size(); off += chunkSize) {
-                size_t end = std::min(off + chunkSize, rows.size());
-                std::vector<ProfileInsertRow> chunk(rows.begin() + static_cast<std::ptrdiff_t>(off),
-                                                    rows.begin() + static_cast<std::ptrdiff_t>(end));
-                execBatchInsertProfilesChunk(chunk);
-            }
-        }
-
         void execBatchReplaceProfiles0(const std::vector<ProfileInsertRow>& rows) {
             const size_t chunkSize = BATCH_LIMIT_WRITE / 14;
             for (size_t off = 0; off < rows.size(); off += chunkSize) {
@@ -295,13 +284,9 @@ namespace Configs {
             }
         }
 
-        void execBatchInsertProfiles(const std::vector<ProfileInsertRow>& rows) {
-            try {
-                execBatchInsertProfiles0(rows);
-            } catch (std::exception& e) {
-                NotifyError("execBatchInsertProfiles", e);
-            }
-        }
+        // Stops at the first failed statement; returns the number of rows in completed chunks.
+        // Earlier chunks stay saved. Each INSERT statement uses SQLite's default ABORT policy.
+        size_t execBatchInsertProfiles(const std::vector<ProfileInsertRow>& rows);
 
         void execBatchReplaceProfiles(const std::vector<ProfileInsertRow>& rows) {
             try {

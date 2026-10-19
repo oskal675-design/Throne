@@ -27,7 +27,7 @@ namespace Subscription {
     // The global subscription settings under the group's overrides; nullptr resolves the globals alone.
     RequestIdentity ResolveIdentity(const Configs::Group *group);
 
-    // A refresh's or a quiet import's result. Nothing was applied unless ok().
+    // A refresh's or a quiet import's result. Database failures can leave a partially applied operation.
     struct UpdateOutcome {
         enum class Failure {
             None,
