@@ -438,6 +438,25 @@ namespace Configs {
             group->RemoveProfileBatch(ids);
             dataManager->groupsRepo->Save(group);
         }
+        // GUI and subscription deletions also reach this path without ProfileService::Delete.
+        // Clear only confirmed deletions, never a running profile filtered out above.
+        const QSet<int> removed(existing.cbegin(), existing.cend());
+        for (const int gid : dataManager->groupsRepo->GetAllGroupIds()) {
+            const auto group = dataManager->groupsRepo->GetGroup(gid);
+            if (group == nullptr) continue;
+            bool changed = false;
+            if (removed.contains(group->front_proxy_id)) {
+                group->front_proxy_id = -1;
+                changed = true;
+                MW_show_log(QStringLiteral("[Groups] %1: front proxy removed (its profile was deleted)").arg(group->name));
+            }
+            if (removed.contains(group->landing_proxy_id)) {
+                group->landing_proxy_id = -1;
+                changed = true;
+                MW_show_log(QStringLiteral("[Groups] %1: landing proxy removed (its profile was deleted)").arg(group->name));
+            }
+            if (changed) dataManager->groupsRepo->Save(group);
+        }
         return true;
     }
 
