@@ -1,9 +1,12 @@
 #pragma once
 
 #include <array>
+#include <utility>
 
 #include <QHash>
 #include <QHeaderView>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QPainter>
@@ -33,11 +36,81 @@ public:
         outbound_filter = makeEdit();
 
         connect(this, &QHeaderView::sectionResized, this, &ConnectionsFilterHeader::adjustPositions);
+        connect(this, &QHeaderView::sectionResized, this, [this](int section, int, int width) {
+            if (!m_manualWidths || m_changingWidths || !isManualColumn(section) || isSectionHidden(section)) return;
+            const int boundedWidth = qBound(minimumSectionSize(), width, kMaximumSavedWidth);
+            if (boundedWidth != width) {
+                m_changingWidths = true;
+                resizeSection(section, boundedWidth);
+                m_changingWidths = false;
+            }
+            m_savedWidths.insert(section, boundedWidth);
+            emit columnLayoutChanged();
+        });
 
         setFiltersVisible(false);
     }
 
     bool filtersVisible() const { return m_filtersVisible; }
+
+    bool manualColumnWidths() const { return m_manualWidths; }
+
+    // Named logical columns survive visibility changes without saving Qt's entire header state.
+    void restoreColumnWidths(const QString &saved) {
+        m_savedWidths.clear();
+        const auto object = QJsonDocument::fromJson(saved.toUtf8()).object();
+        for (const auto &[column, name] : manualColumns()) {
+            const auto value = object.value(QLatin1String(name));
+            const int width = value.toInt(-1);
+            if (value.isDouble() && value.toDouble() == width && width > 0 && width <= kMaximumSavedWidth)
+                m_savedWidths.insert(column, width);
+        }
+    }
+
+    QString savedColumnWidths() const {
+        QJsonObject object;
+        for (const auto &[column, name] : manualColumns()) {
+            if (m_savedWidths.contains(column)) object.insert(QLatin1String(name), m_savedWidths.value(column));
+        }
+        return QString::fromUtf8(QJsonDocument(object).toJson(QJsonDocument::Compact));
+    }
+
+    void setManualColumnWidths(bool manual) {
+        if (manual == m_manualWidths) return;
+        m_changingWidths = true;
+        if (manual) {
+            for (const auto &[column, name] : manualColumns()) {
+                if (!m_savedWidths.contains(column))
+                    m_savedWidths.insert(column, qMax(sectionSize(column), sectionSizeHint(column)));
+            }
+        }
+        m_manualWidths = manual;
+        for (const auto &[column, name] : manualColumns()) {
+            setSectionResizeMode(column, manual ? QHeaderView::Interactive
+                : column == ConnectionsTreeModel::ColOutbound ? QHeaderView::Fixed : QHeaderView::ResizeToContents);
+            if (manual) {
+                const int width = qBound(minimumSectionSize(), m_savedWidths.value(column), kMaximumSavedWidth);
+                m_savedWidths.insert(column, width);
+                resizeSection(column, width);
+            }
+        }
+        if (!manual) {
+            resizeSections();
+            fitOutboundSection();
+        }
+        m_changingWidths = false;
+        adjustPositions();
+        emit columnLayoutChanged();
+    }
+
+    // Reset also returns to automatic sizing; simply unticking Manual keeps the last manual widths.
+    void resetColumnWidths() {
+        setManualColumnWidths(false);
+        m_savedWidths.clear();
+        resizeSections();
+        fitOutboundSection();
+        emit columnLayoutChanged();
+    }
 
     void clearFilterFor(int column) {
         if (QLineEdit *edit = editForColumn(column)) edit->clear();
@@ -64,6 +137,7 @@ public:
 
     // Only ever widens: an exact fit would resize the section every poll as live digits change.
     void growSection(int section) {
+        if (m_manualWidths && isManualColumn(section)) return;
         const auto *view = qobject_cast<QAbstractItemView *>(parent());
         const int contentWidth = view != nullptr ? view->sizeHintForColumn(section) : -1;
         if (contentWidth <= m_grownWidths.value(section)) return;
@@ -115,6 +189,11 @@ protected:
     void updateGeometries() override {
         QHeaderView::updateGeometries();
         fitOutboundSection();
+        adjustPositions();
+    }
+
+    void scrollContentsBy(int dx, int dy) override {
+        QHeaderView::scrollContentsBy(dx, dy);
         adjustPositions();
     }
 
@@ -186,12 +265,26 @@ signals:
     void filtersChanged();
     // The checkable toolbutton owns the visible state, so it has to be the one to untoggle us.
     void closeRequested();
+    void columnLayoutChanged();
 
 private:
     static constexpr int kSortArrowRoom = 14;
+    static constexpr int kMaximumSavedWidth = 16384;
+
+    static std::array<std::pair<int, const char *>, 4> manualColumns() {
+        using Model = ConnectionsTreeModel;
+        return std::array<std::pair<int, const char *>, 4>{{
+            {Model::ColSource, "source"}, {Model::ColProtocol, "protocol"},
+            {Model::ColOutbound, "outbound"}, {Model::ColTraffic, "traffic"}}};
+    }
+
+    static bool isManualColumn(int column) {
+        return column >= ConnectionsTreeModel::ColSource && column <= ConnectionsTreeModel::ColTraffic;
+    }
 
     // Outbound fits its content into what the stretched Target leaves past the Target's own content, so a long address wins.
     void fitOutboundSection() {
+        if (m_manualWidths) return;
         using Model = ConnectionsTreeModel;
         const auto *view = qobject_cast<QAbstractItemView *>(parent());
         if (view == nullptr || count() < Model::ColumnCount) return;
@@ -259,4 +352,7 @@ private:
     int m_sortSection = -1;
     bool m_sortDescending = false;
     QHash<int, int> m_grownWidths;
+    bool m_manualWidths = false;
+    bool m_changingWidths = false;
+    QHash<int, int> m_savedWidths;
 };

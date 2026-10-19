@@ -106,7 +106,7 @@ QVariant ConnectionsTreeModel::data(const QModelIndex &index, int role) const {
             case ColProtocol:
                 return QStringLiteral("-");
             case ColOutbound:
-                return group->sameOutbound ? group->commonOutboundText : QStringLiteral("-");
+                return group->sameOutbound ? (m_fullOutboundNames ? group->commonOutbound : group->commonOutboundText) : QStringLiteral("-");
             case ColTraffic:
                 return ReadableSize(group->totalUpload) + "↑ " + ReadableSize(group->totalDownload) + "↓";
             case ColSpeed:
@@ -143,7 +143,7 @@ QVariant ConnectionsTreeModel::data(const QModelIndex &index, int role) const {
         case ColProtocol:
             return leaf->protocolText;
         case ColOutbound:
-            return leaf->outboundText;
+            return m_fullOutboundNames ? leaf->meta.outboundName : leaf->outboundText;
         case ColTraffic:
             return ReadableSize(leaf->upload) + "↑ " + ReadableSize(leaf->download) + "↓";
         case ColSpeed:
@@ -198,6 +198,17 @@ QVariant ConnectionsTreeModel::headerData(int section, Qt::Orientation orientati
     }
 
     return {};
+}
+
+void ConnectionsTreeModel::setFullOutboundNames(bool full) {
+    if (m_fullOutboundNames == full) return;
+    m_fullOutboundNames = full;
+    for (const auto &group : m_groups) {
+        emit dataChanged(indexOf(group.get(), ColOutbound), indexOf(group.get(), ColOutbound), {Qt::DisplayRole});
+        if (!group->children.empty())
+            emit dataChanged(indexOf(group->children.front().get(), ColOutbound),
+                             indexOf(group->children.back().get(), ColOutbound), {Qt::DisplayRole});
+    }
 }
 
 void ConnectionsTreeModel::setConnections(const QList<Stats::ConnectionMetadata> &connections,

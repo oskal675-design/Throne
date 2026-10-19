@@ -132,6 +132,9 @@ namespace Configs {
         // Stats::ConnectionSort; 0 == Stats::Default, the core's own ordering.
         int connection_sort = 0;
         bool connection_sort_asc = false;
+        bool connection_manual_widths = false;
+        // JSON of named middle-column widths only; never restores order, visibility or sorting.
+        QString connection_column_widths;
         // Days of hour-resolution history to retain (the 48h minute-resolution window is fixed); clamped to >= 1 in use.
         int traffic_stats_retention_days = 90;
         bool disable_traffic_aggregation = false;

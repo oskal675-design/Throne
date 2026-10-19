@@ -177,6 +177,23 @@ void MainWindow::setupConnectionList()
     });
 
     syncConnectionSourceColumn();
+
+    const auto &settings = Configs::dataManager->settingsRepo;
+    connectionFilterHeader->restoreColumnWidths(settings->connection_column_widths);
+    auto *saveWidths = new QTimer(connectionFilterHeader);
+    saveWidths->setSingleShot(true);
+    saveWidths->setInterval(200);
+    connect(saveWidths, &QTimer::timeout, this, [] { Configs::dataManager->settingsRepo->Save(); });
+    connect(connectionFilterHeader, &ConnectionsFilterHeader::columnLayoutChanged, this, [this, saveWidths] {
+        const bool manual = connectionFilterHeader->manualColumnWidths();
+        connectionsModel->setFullOutboundNames(manual);
+        const auto &settings = Configs::dataManager->settingsRepo;
+        settings->connection_manual_widths = manual;
+        settings->connection_column_widths = connectionFilterHeader->savedColumnWidths();
+        // Keep the in-memory values current for shutdown, without a database write per drag pixel.
+        saveWidths->start();
+    });
+    connectionFilterHeader->setManualColumnWidths(settings->connection_manual_widths);
 }
 
 void MainWindow::restoreConnectionSort()
@@ -286,7 +303,22 @@ void MainWindow::setupConnectionSortMenu()
         const int columnIndex = header->logicalIndexAt(pos);
         const bool isTraffic = columnIndex == ConnectionsTreeModel::ColTraffic;
         const bool isSpeed = columnIndex == ConnectionsTreeModel::ColSpeed;
-        if (!isTraffic && !isSpeed) return;
+
+        QMenu menu(this);
+        auto *manualWidths = menu.addAction(tr("Manual Column Widths"));
+        manualWidths->setObjectName(QStringLiteral("actionManualConnectionWidths"));
+        manualWidths->setCheckable(true);
+        manualWidths->setChecked(connectionFilterHeader->manualColumnWidths());
+        connect(manualWidths, &QAction::toggled, connectionFilterHeader, &ConnectionsFilterHeader::setManualColumnWidths);
+        auto *resetWidths = menu.addAction(tr("Reset Column Widths"));
+        resetWidths->setObjectName(QStringLiteral("actionResetConnectionWidths"));
+        resetWidths->setToolTip(tr("Return to automatic sizing and forget saved manual widths"));
+        connect(resetWidths, &QAction::triggered, connectionFilterHeader, &ConnectionsFilterHeader::resetColumnWidths);
+
+        if (!isTraffic && !isSpeed) {
+            menu.exec(header->mapToGlobal(pos));
+            return;
+        }
 
         struct SortOption { Stats::ConnectionSort value; QString label; };
         const QList<SortOption> options = isTraffic
@@ -299,7 +331,7 @@ void MainWindow::setupConnectionSortMenu()
                 { Stats::ByDownloadSpeed, tr("Download Speed") },
                 { Stats::ByUploadSpeed, tr("Upload Speed") } };
 
-        QMenu menu(this);
+        menu.addSeparator();
         auto* sortByLabel = menu.addAction(tr("Sort By:"));
         sortByLabel->setEnabled(false);
 

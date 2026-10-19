@@ -89,6 +89,7 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
     void setConnections(const QList<Stats::ConnectionMetadata> &connections, Stats::ConnectionSort sort, bool ascending);
+    void setFullOutboundNames(bool full);
 
     static QString displayProcessName(const QString &processName);
 
@@ -102,4 +103,5 @@ private:
     QModelIndex indexOf(ConnectionsTree::TreeItem *item, int column) const;
 
     std::vector<std::unique_ptr<ConnectionsTree::ProcessGroupItem>> m_groups;
+    bool m_fullOutboundNames = false;
 };
