@@ -2,8 +2,12 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QDir>
+#include <QFileDialog>
 #include <QMenu>
+#include <QMessageBox>
 #include <QMutexLocker>
+#include <QSaveFile>
 #include <QScrollBar>
 #include <QTextCursor>
 
@@ -328,6 +332,22 @@ void MainWindow::on_masterLogBrowser_customContextMenuRequested(const QPoint &po
     auto sep = new QAction(this);
     sep->setSeparator(true);
     menu->addAction(sep);
+
+    auto action_save = menu->addAction(tr("Save displayed log..."));
+    action_save->setObjectName(QStringLiteral("actionSaveDisplayedLog"));
+    action_save->setEnabled(!qvLogDocument->isEmpty());
+    connect(action_save, &QAction::triggered, this, [this] {
+        // Snapshot only the displayed lines; a modal dialog can receive newer log batches.
+        const auto text = qvLogDocument->toPlainText().toUtf8();
+        const auto title = tr("Save displayed log");
+        const auto path = QFileDialog::getSaveFileName(this, title, QDir::homePath() + "/Throne-displayed-log.txt",
+                                                       tr("Text files (*.txt);;All files (*)"));
+        if (path.isEmpty()) return;
+        QSaveFile file(path);
+        if (!file.open(QIODevice::WriteOnly) || file.write(text) != text.size() || !file.commit()) {
+            QMessageBox::warning(this, title, tr("Cannot write to: %1").arg(path));
+        }
+    });
 
     auto action_clear = new QAction(this);
     action_clear->setText(tr("Clear"));
