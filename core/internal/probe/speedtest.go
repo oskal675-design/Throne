@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/Mahdi-zarei/speedtest-go/speedtest"
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing/service"
 )
@@ -223,8 +225,23 @@ func speedTestWithDialer(ctx context.Context, dialer func(ctx context.Context, n
 		return err
 	}
 	defer closeClient()
+	return speedTestWithServer(ctx, srv, res, testDl, testUl, timeout)
+}
+
+func speedTestWithServer(ctx context.Context, srv *speedtest.Server, res *SpeedTestResult, testDl, testUl bool, timeout time.Duration) error {
 	res.ServerName = srv.Name
 	res.ServerCountry = srv.Country
+
+	// The EWMA getters are not safe while the dependency's capture goroutine
+	// updates its estimator. Install callbacks before starting either test and
+	// publish only their byte-per-second values to the sampling loop.
+	var downloadRate, uploadRate atomic.Uint64
+	srv.Context.SetCallbackDownload(func(rate speedtest.ByteRate) {
+		downloadRate.Store(math.Float64bits(float64(rate)))
+	})
+	srv.Context.SetCallbackUpload(func(rate speedtest.ByteRate) {
+		uploadRate.Store(math.Float64bits(float64(rate)))
+	})
 
 	done := make(chan struct{})
 	// Only read after <-done, which orders it against the goroutine's write.
@@ -273,8 +290,8 @@ func speedTestWithDialer(ctx context.Context, dialer func(ctx context.Context, n
 			res.Cancelled = true
 			return ctx.Err()
 		case <-ticker.C:
-			res.DlSpeed = BrateToStr(srv.Context.GetEWMADownloadRate())
-			res.UlSpeed = BrateToStr(srv.Context.GetEWMAUploadRate())
+			res.DlSpeed = BrateToStr(math.Float64frombits(downloadRate.Load()))
+			res.UlSpeed = BrateToStr(math.Float64frombits(uploadRate.Load()))
 			res.DlBytes = srv.Context.GetTotalDownload()
 			res.UlBytes = srv.Context.GetTotalUpload()
 			res.Latency = int32(srv.Latency.Milliseconds())
