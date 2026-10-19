@@ -1085,6 +1085,8 @@ namespace Subscription {
                 const auto newEnt = profilesRepo->GetProfile(newId);
                 if (oldEnt != nullptr && newEnt != nullptr) {
                     oldEnt->outbound = newEnt->outbound;
+                    // The replacement belongs to the retained profile, not the temporary import row.
+                    oldEnt->outbound->profile_id = oldId;
                     oldEnt->name = oldEnt->outbound->name;
                     profilesRepo->Save(oldEnt);
                 }
