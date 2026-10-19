@@ -18,6 +18,7 @@
 #include "include/database/GroupsRepo.h"
 #include "include/database/RoutesRepo.h"
 #include "include/engine/EngineHost.h"
+#include "include/engine/EngineEvents.h"
 #include "include/engine/ThreadCheck.h"
 #include "include/engine/app/ExitController.h"
 #include "include/engine/connection/ConnectionManager.h"
@@ -248,7 +249,7 @@ void MainWindow::handle_addsub(const QString &url, const QString &name) {
     group->url = url;
     group->skip_auto_update = !autoUpdate;
     Configs::dataManager->groupsRepo->AddGroup(group);
-    refresh_groups();
+    Engine::EngineEvents::SubscriptionNewGroup(group->id);
     Subscription::updater()->RefreshGroup(group->id, nullptr, Subscription::GroupUpdater::Surface::Report);
 }
 

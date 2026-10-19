@@ -154,7 +154,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     // AutoConnection, like the old runOnUiThread hop: direct for emits on the main thread, queued from workers.
     auto *engineEvents = Engine::EngineEvents::instance();
-    connect(engineEvents, &Engine::EngineEvents::subscriptionNewGroup, this, [this] { refresh_groups(); });
+    connect(engineEvents, &Engine::EngineEvents::subscriptionNewGroup, this, [this](int groupId) {
+        refresh_groups();
+        // Focus at creation, not when the download finishes: the user may switch tabs while it runs.
+        const int index = Configs::dataManager->groupsRepo->GetGroupsTabOrder().indexOf(groupId);
+        if (index >= 0) ui->tabWidget->setCurrentIndex(index);
+    });
     connect(engineEvents, &Engine::EngineEvents::subscriptionFinished, this, [this](int, bool) { refresh_proxy_list({}, true); });
     connect(engineEvents, &Engine::EngineEvents::subscriptionDiff, this, [](const QString &title, const QString &body) {
         MessageBoxScrollable(title, body);
