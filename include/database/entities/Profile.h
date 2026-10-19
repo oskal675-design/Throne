@@ -38,7 +38,13 @@ namespace Configs {
     constexpr int kLatencyConnectOnly = -2;
 
     class Profile {
+        friend class ProfilesRepo;
+        // Local metadata: only ProfilesRepo::SetFavorites changes an existing row.
+        bool favorite = false;
+
     public:
+        [[nodiscard]] bool IsFavorite() const { return favorite; }
+
         QString type;
         QString name;
 

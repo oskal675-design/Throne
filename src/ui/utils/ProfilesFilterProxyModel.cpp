@@ -15,7 +15,13 @@ ProfilesTableModel *ProfilesFilterProxyModel::profilesModel() const {
 }
 
 bool ProfilesFilterProxyModel::hasActiveFilter() const {
-    return !m_type.isEmpty() || !m_address.isEmpty() || !m_name.isEmpty() || !m_country.isEmpty();
+    return m_favoritesOnly || !m_type.isEmpty() || !m_address.isEmpty() || !m_name.isEmpty() || !m_country.isEmpty();
+}
+
+void ProfilesFilterProxyModel::setFavoritesOnly(bool enabled) {
+    if (m_favoritesOnly == enabled) return;
+    m_favoritesOnly = enabled;
+    invalidateRowsFilter();
 }
 
 void ProfilesFilterProxyModel::setFilters(const QString &type, const QString &address,
@@ -57,6 +63,7 @@ bool ProfilesFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex
     // A profile that failed to load stays visible rather than becoming unreachable.
     const auto *key = model->filterKeyAt(sourceRow);
     if (!key) return true;
+    if (m_favoritesOnly && !key->favorite) return false;
 
     if (!m_address.isEmpty()) {
         if (m_address.startsWith(portPrefix)) {

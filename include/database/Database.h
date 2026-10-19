@@ -209,7 +209,7 @@ namespace Configs {
         }
 
         void execBatchReplaceProfiles0(const std::vector<ProfileInsertRow>& rows) {
-            const size_t chunkSize = BATCH_LIMIT_WRITE / 14;
+            const size_t chunkSize = BATCH_LIMIT_WRITE / 15;
             for (size_t off = 0; off < rows.size(); off += chunkSize) {
                 size_t end = std::min(off + chunkSize, rows.size());
                 std::vector<ProfileInsertRow> chunk(rows.begin() + static_cast<std::ptrdiff_t>(off),

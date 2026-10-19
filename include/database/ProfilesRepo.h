@@ -80,6 +80,9 @@ namespace Configs {
         // No-op unless id >= 0; false for a deleted id, which is not written back.
         bool Save(const std::shared_ptr<Profile>& profile);
 
+        // Atomically changes local metadata for existing ids; caches change only after commit.
+        bool SetFavorites(const QList<int>& ids, bool favorite);
+
         // Blind UPDATE of the traffic columns: no existence check.
         bool SaveTraffic(const std::shared_ptr<Profile>& profile);
 

@@ -34,6 +34,7 @@ public:
         QString name;
         QString country;
         int port = 0;
+        bool favorite = false;
     };
 
     explicit ProfilesTableModel(QObject *parent = nullptr);

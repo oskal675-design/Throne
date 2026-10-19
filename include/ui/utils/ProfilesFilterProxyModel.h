@@ -13,6 +13,7 @@ public:
     // `address` also takes "port=N", "port=MIN:MAX", "port=MIN:", "port=:MAX".
     void setFilters(const QString &type, const QString &address, const QString &name, const QString &country);
     bool hasActiveFilter() const;
+    void setFavoritesOnly(bool enabled);
 
     ProfilesTableModel *profilesModel() const;
 
@@ -25,6 +26,7 @@ protected:
 private:
     bool portMatches(int port) const;
 
+    bool m_favoritesOnly = false;
     QString m_type;
     QString m_address;
     QString m_name;

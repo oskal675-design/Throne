@@ -116,13 +116,15 @@ QVariant ProfilesTableModel::data(const QModelIndex &index, int role) const {
             if (address == m_addressCache.constEnd()) address = m_addressCache.insert(profileId, Configs::DisplayEffectiveAddress(profile));
             return address.value();
         }
-        case ColName: return profile->outbound ? profile->outbound->name : QString();
+        case ColName: return (profile->IsFavorite() ? QStringLiteral("★ ") : QString())
+                             + (profile->outbound ? profile->outbound->name : QString());
         case ColTestResult: return profile->DisplayTestResult();
         case ColTraffic: return profile->DisplayTraffic();
         default: return {};
         }
     }
     if (role == Qt::ToolTipRole) {
+        if (index.column() == ColName && profile->IsFavorite()) return tr("Favorite");
         if (index.column() == ColType && Configs::dataManager->settingsRepo->show_config_security && profile->outbound) {
             const auto security = profile->outbound->EffectiveSecurity();
             if (security.compromised) return tr("Certificate checks are turned off by the \"Skip TLS certificate authentication\" setting.");
@@ -176,6 +178,7 @@ namespace {
     ProfilesTableModel::FilterKey makeFilterKey(const std::shared_ptr<Configs::Profile> &profile) {
         ProfilesTableModel::FilterKey key;
         key.type = profile->type;
+        key.favorite = profile->IsFavorite();
         key.country = profile->test_country;
         if (profile->outbound) {
             key.address = profile->outbound->server;

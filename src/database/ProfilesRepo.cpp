@@ -33,6 +33,7 @@ namespace Configs {
                 traffic_dl INTEGER NOT NULL DEFAULT 0,
                 traffic_up INTEGER NOT NULL DEFAULT 0,
                 endpoint_json TEXT NOT NULL DEFAULT '{}',
+                favorite INTEGER NOT NULL DEFAULT 0,
                 created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
                 updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
                 FOREIGN KEY(gid) REFERENCES groups(id) ON DELETE CASCADE
@@ -43,6 +44,9 @@ namespace Configs {
             db.exec("ALTER TABLE profiles ADD COLUMN latency_at INTEGER NOT NULL DEFAULT 0");
         if (!profilesColumnExists("endpoint_json"))
             db.exec("ALTER TABLE profiles ADD COLUMN endpoint_json TEXT NOT NULL DEFAULT '{}'");
+
+        if (!profilesColumnExists("favorite"))
+            db.execThrow("ALTER TABLE profiles ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0");
 
         db.exec("CREATE INDEX IF NOT EXISTS idx_profiles_name ON profiles(name)");
     }
@@ -63,6 +67,7 @@ namespace Configs {
         profile->name = json["name"].toString();
         profile->id = json["id"].toInt();
         profile->gid = json["gid"].toInt();
+        profile->favorite = json["favorite"].toBool(false);
         profile->latency = json["latency"].toInt();
         profile->latency_at = json["latency_at"].toVariant().toLongLong();
         profile->dl_speed = json["dl_speed"].toString();
@@ -184,13 +189,14 @@ namespace Configs {
             json["endpoint"] = endpointDoc.object();
         }
         
+        json["favorite"] = stmt.getColumn(14).getInt() != 0;
         return profileFromJson(json);
     }
 
     std::shared_ptr<Profile> ProfilesRepo::loadFromDatabase(int id) const {
         auto query = db.query(R"(
             SELECT id, type, name, gid, latency, latency_at, dl_speed, ul_speed, test_country,
-                   ip_out, outbound_json, traffic_dl, traffic_up, endpoint_json
+                   ip_out, outbound_json, traffic_dl, traffic_up, endpoint_json, favorite
             FROM profiles WHERE id = ?
         )", id);
         if (!query || !query->executeStep()) {
@@ -288,7 +294,7 @@ namespace Configs {
             idList += QString::number(chunkIds[i]);
         }
         std::string sql = "SELECT id, type, name, gid, latency, latency_at, dl_speed, ul_speed, test_country, "
-                         "ip_out, outbound_json, traffic_dl, traffic_up, endpoint_json FROM profiles WHERE id IN (" +
+                         "ip_out, outbound_json, traffic_dl, traffic_up, endpoint_json, favorite FROM profiles WHERE id IN (" +
                          idList.toStdString() + ") ORDER BY id";
         auto query = db.query(sql);
         if (!query) return result;
@@ -508,6 +514,28 @@ namespace Configs {
         }
         LOG_DEBUG(QString("Profile %1 was deleted; not saving it").arg(profile->id));
         return false;
+    }
+
+    bool ProfilesRepo::SetFavorites(const QList<int>& ids, bool favorite) {
+        if (ids.isEmpty()) return true;
+        QMutexLocker locker(&mutex);
+        QSet<int> updated;
+        if (!db.transaction("SetFavorites", [&] {
+            for (int id : ids) {
+                if (id < 0 || tombstones.contains(id) || updated.contains(id)) continue;
+                auto query = db.queryThrow("UPDATE profiles SET favorite = ? WHERE id = ? RETURNING id",
+                                           favorite ? 1 : 0, id);
+                while (query->executeStep()) updated.insert(query->getColumn(0).getInt());
+            }
+            return true;
+        })) return false;
+        for (int id : updated) {
+            const auto it = identityMap.find(id);
+            if (it != identityMap.end()) {
+                if (const auto profile = it->second.lock()) profile->favorite = favorite;
+            }
+        }
+        return true;
     }
 
     bool ProfilesRepo::SaveTraffic(const std::shared_ptr<Profile>& profile) {

@@ -10,6 +10,8 @@
 #include "include/engine/tests/TestRunner.h"
 
 #include <QMenu>
+#include <QHBoxLayout>
+#include "include/ui/utils/ProfilesFilterProxyModel.h"
 
 #include "include/configs/sub/GroupUpdater.hpp"
 #include "include/configs/sub/RouteUpdater.hpp"
@@ -272,7 +274,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(btnFilter, &QToolButton::toggled, static_cast<ProfilesTableFilterHeader*>(ui->profilesTableView->horizontalHeader()), &ProfilesTableFilterHeader::setFiltersVisible);
     connect(static_cast<ProfilesTableFilterHeader*>(ui->profilesTableView->horizontalHeader()), &ProfilesTableFilterHeader::closeRequested,
             btnFilter, [btnFilter] { btnFilter->setChecked(false); });
-    ui->tabWidget->setCornerWidget(btnFilter, Qt::TopRightCorner);
+    auto btnFavorites = new QToolButton(this);
+    btnFavorites->setObjectName("btnFavoritesOnly");
+    btnFavorites->setText(QStringLiteral("★"));
+    btnFavorites->setToolTip(tr("Favorites only"));
+    btnFavorites->setAccessibleName(tr("Favorites only"));
+    btnFavorites->setCheckable(true);
+    btnFavorites->setContextMenuPolicy(Qt::PreventContextMenu);
+    connect(btnFavorites, &QToolButton::toggled, this, [this](bool enabled) {
+        profilesFilterModel->setFavoritesOnly(enabled);
+    });
+    auto filterControls = new QWidget(this);
+    auto filterLayout = new QHBoxLayout(filterControls);
+    filterLayout->setContentsMargins(0, 0, 0, 0);
+    filterLayout->setSpacing(0);
+    filterLayout->addWidget(btnFavorites);
+    filterLayout->addWidget(btnFilter);
+    ui->tabWidget->setCornerWidget(filterControls, Qt::TopRightCorner);
     RegisterHotkey(false);
     auto last_size = Configs::dataManager->settingsRepo->mw_size.split("x");
     if (last_size.length() == 2) {
@@ -692,6 +710,34 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connection()->setTun(false);
     });
     connect(ui->menu_qr, &QAction::triggered, this, [=,this]() { display_qr_link(false); });
+
+    auto addFavorite = new QAction(tr("Add to favorites"), this);
+    auto removeFavorite = new QAction(tr("Remove from favorites"), this);
+    addFavorite->setObjectName("actionAddToFavorites");
+    removeFavorite->setObjectName("actionRemoveFromFavorites");
+    ui->menu_server->insertAction(ui->menu_clone, addFavorite);
+    ui->menu_server->insertAction(ui->menu_clone, removeFavorite);
+    auto setFavorites = [this](bool favorite) {
+        // Capture ids before refiltering: removing a favorite can hide selected rows.
+        const auto ids = get_now_selected_list();
+        if (!Configs::dataManager->profilesRepo->SetFavorites(ids, favorite)) {
+            QMessageBox::warning(this, tr("Favorites"), tr("Could not save favorites."));
+            return;
+        }
+        // A group may list the same id more than once; refresh every displayed slot.
+        profilesTableModel->refreshTable();
+    };
+    connect(addFavorite, &QAction::triggered, this, [setFavorites] { setFavorites(true); });
+    connect(removeFavorite, &QAction::triggered, this, [setFavorites] { setFavorites(false); });
+    connect(ui->menu_server, &QMenu::aboutToShow, this, [this, addFavorite, removeFavorite] {
+        bool hasFavorite = false, hasOther = false;
+        for (const auto& profile : Configs::dataManager->profilesRepo->GetProfileBatch(get_now_selected_list())) {
+            if (profile->IsFavorite()) hasFavorite = true;
+            else hasOther = true;
+        }
+        addFavorite->setEnabled(hasOther);
+        removeFavorite->setEnabled(hasFavorite);
+    });
 
     connect(ui->menu_server, &QMenu::aboutToShow, this, [=,this](){
         if (auto selected = get_now_selected_list(); selected.empty())
