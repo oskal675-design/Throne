@@ -120,9 +120,9 @@ void MainWindow::on_menu_delete_repeat_triggered() {
         return;
     }
 
+    if (!del_ids.isEmpty() && !Configs::dataManager->profilesRepo->BatchDeleteProfiles(del_ids, true)) return;
     group->profiles = newOrder;
     Configs::dataManager->groupsRepo->Save(group);
-    if (!del_ids.isEmpty()) Configs::dataManager->profilesRepo->BatchDeleteProfiles(del_ids, true);
     refresh_proxy_list({}, true, RefreshAnchor::Removal);
 }
 
