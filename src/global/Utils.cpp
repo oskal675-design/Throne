@@ -676,12 +676,6 @@ void runOnThread(const std::function<void()> &callback, QObject *parent, bool wa
 }
 
 void setTimeout(const std::function<void()> &callback, QObject *obj, int timeout) {
-    auto t = new QTimer;
-    QObject::connect(t, &QTimer::timeout, obj, [=] {
-        callback();
-        t->deleteLater();
-    });
-    t->setSingleShot(true);
-    t->setInterval(timeout);
-    t->start();
+    if (!obj) return;
+    QTimer::singleShot(timeout, Qt::CoarseTimer, obj, callback);
 }
