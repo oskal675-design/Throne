@@ -26,10 +26,10 @@ namespace Configs {
         username = url.userName();
         password = url.password();
 
-        // v2rayN base64s "user:pass" into the username; with no ':' SubStrBefore/After both return it whole.
-        if (password.isEmpty() && !username.isEmpty()) {
+        // v2rayN base64-encodes "user:pass" into the username. A literal ':' marks an explicit password, even an empty one.
+        if (!url.userInfo(QUrl::FullyEncoded).contains(':') && !username.isEmpty()) {
             QString decoded = DecodeB64IfValid(username);
-            if (!decoded.isEmpty()) {
+            if (decoded.contains(':')) {
                 username = SubStrBefore(decoded, ":");
                 password = SubStrAfter(decoded, ":");
             }
@@ -86,7 +86,8 @@ namespace Configs {
         url.setPort(server_port);
         if (!name.isEmpty()) url.setFragment(name);
         if (!username.isEmpty()) url.setUserName(username);
-        if (!password.isEmpty()) url.setPassword(password);
+        // Keep username-only links unambiguous even when the user name itself is valid base64 of "user:pass".
+        if (!password.isEmpty() || !username.isEmpty()) url.setPassword(password.isEmpty() ? QStringLiteral("") : password);
         if (!path.isEmpty()) query.addQueryItem("path", path);
         if (!headers.empty()) query.addQueryItem("headers", headers.join(","));
         mergeUrlQuery(query, tls->ExportToLink());
