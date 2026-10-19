@@ -205,6 +205,8 @@ set(PROJECT_SOURCES
         include/ui/setting/ThemeManager.hpp
         src/ui/setting/ThemeManager.cpp
         src/ui/setting/Icon.cpp
+        include/ui/setting/IconTheme.hpp
+        src/ui/setting/IconTheme.cpp
 
         src/ui/mainWindow/mainwindow_setup.cpp
         src/ui/mainWindow/mainwindow_events.cpp

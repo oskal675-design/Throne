@@ -16,6 +16,7 @@
 #include "include/global/Logger.hpp"
 #include "include/global/Notice.hpp"
 #include "include/sys/HostPresence.hpp"
+#include "include/ui/setting/IconTheme.hpp"
 
 #ifdef Q_OS_WIN
 #include <3rdparty/WinCommander.hpp>
@@ -139,6 +140,10 @@ namespace GuiStartup {
         if (QIcon::themeName().isEmpty()) {
             QIcon::setThemeName("breeze");
         }
+#ifdef Q_OS_LINUX
+        const auto &settings = Configs::dataManager->settingsRepo;
+        IconTheme::ApplyStartup(settings->use_system_toolbar_icons, settings->toolbar_icon_theme);
+#endif
     }
 
 #ifdef Q_OS_WIN

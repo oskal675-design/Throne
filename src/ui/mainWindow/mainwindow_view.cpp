@@ -21,6 +21,7 @@
 #include "include/stats/autoselector/AutoSelectorMonitor.hpp"
 #include "include/sys/KillSwitch.hpp"
 #include "include/ui/setting/Icon.hpp"
+#include "include/ui/setting/IconTheme.hpp"
 #include "include/ui/stats/dialog_auto_selector.h"
 #include "include/ui/utils/ProfilesTableFilterHeader.h"
 #include "include/ui/utils/ProfilesTableModel.h"
@@ -39,7 +40,7 @@ void MainWindow::refreshToolbarIcons() {
     // Applying the initial widget style can send change events before setupUi finishes.
     if (!toolbarIconsReady) return;
 #ifdef Q_OS_LINUX
-    const bool useTheme = Configs::dataManager->settingsRepo->use_system_toolbar_icons;
+    const bool useTheme = Configs::dataManager->settingsRepo->use_system_toolbar_icons && IconTheme::ToolbarThemeAvailable();
 #else
     const bool useTheme = false;
 #endif

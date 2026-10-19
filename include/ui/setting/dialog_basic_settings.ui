@@ -841,10 +841,43 @@
             <item row="3" column="0" colspan="2">
              <widget class="QCheckBox" name="use_system_toolbar_icons">
               <property name="toolTip">
-               <string>Use the desktop icon theme for toolbar buttons. Missing icons use the bundled icons.</string>
+               <string>Use the selected icon theme for toolbar buttons. When off, the bundled toolbar icons are used.</string>
               </property>
               <property name="text">
-               <string>Use System Icons for Toolbar</string>
+               <string>Use Theme Icons for Toolbar</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="toolbar_icon_theme_label">
+              <property name="text">
+               <string>Icon theme</string>
+              </property>
+              <property name="buddy">
+               <cstring>toolbar_icon_theme</cstring>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QComboBox" name="toolbar_icon_theme">
+              <property name="toolTip">
+               <string>Choose an installed Linux icon theme. A named theme also applies to Qt standard icons after restarting. Tray and connection-status icons keep their separate settings.</string>
+              </property>
+              <property name="sizeAdjustPolicy">
+               <enum>QComboBox::AdjustToMinimumContentsLengthWithIcon</enum>
+              </property>
+              <property name="minimumContentsLength">
+               <number>20</number>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="0" colspan="2">
+             <widget class="QLabel" name="toolbar_icon_theme_note">
+              <property name="text">
+               <string>Icon theme changes apply after restarting. Missing toolbar icons use bundled icons.</string>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
               </property>
              </widget>
             </item>

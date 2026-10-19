@@ -4,6 +4,7 @@
 #include "include/ui/widget/json/SchemaStore.h"
 #include "include/ui/setting/ThemeManager.hpp"
 #include "include/ui/setting/Icon.hpp"
+#include "include/ui/setting/IconTheme.hpp"
 #include "include/ui/utils/GuiUtils.hpp"
 #include "include/global/Configs.hpp"
 #include "include/global/DeviceDetailsHelper.hpp"
@@ -374,8 +375,24 @@ DialogBasicSettings::DialogBasicSettings(QWidget *parent)
     // Custom stylesheet themes, not QStyleFactory keys.
     ui->theme->addItems({"FlatGray", "LightBlue", "SoftPink", "BlackSoft"});
     D_LOAD_BOOL(use_system_toolbar_icons)
-#ifndef Q_OS_LINUX
+#ifdef Q_OS_LINUX
+    ui->toolbar_icon_theme->addItem(tr("System default"), QString());
+    for (const auto &entry : IconTheme::Installed())
+        ui->toolbar_icon_theme->addItem(tr("%1 (%2)").arg(entry.name, entry.id), entry.id);
+    const auto savedIconTheme = Configs::dataManager->settingsRepo->toolbar_icon_theme;
+    int selectedIconTheme = ui->toolbar_icon_theme->findData(savedIconTheme);
+    if (selectedIconTheme < 0) {
+        ui->toolbar_icon_theme->addItem(tr("%1 (unavailable; bundled toolbar icons)").arg(savedIconTheme), savedIconTheme);
+        selectedIconTheme = ui->toolbar_icon_theme->count() - 1;
+    }
+    ui->toolbar_icon_theme->setCurrentIndex(selectedIconTheme);
+    ui->toolbar_icon_theme->setEnabled(ui->use_system_toolbar_icons->isChecked());
+    connect(ui->use_system_toolbar_icons, &QCheckBox::toggled, ui->toolbar_icon_theme, &QWidget::setEnabled);
+#else
     ui->use_system_toolbar_icons->hide();
+    ui->toolbar_icon_theme->hide();
+    ui->toolbar_icon_theme_label->hide();
+    ui->toolbar_icon_theme_note->hide();
 #endif
     ui->enable_custom_icon->setChecked(Configs::dataManager->settingsRepo->use_custom_icons);
     ui->follow_status_in_taskbar->setChecked(Configs::dataManager->settingsRepo->follow_status_in_taskbar);
@@ -673,7 +690,15 @@ void DialogBasicSettings::accept() {
     Configs::dataManager->settingsRepo->enable_stats = ui->connection_statistics->isChecked();
     Configs::dataManager->settingsRepo->disable_traffic_aggregation = ui->disable_traffic_aggregation->isChecked();
     Configs::dataManager->settingsRepo->language = ui->language->currentIndex();
+#ifdef Q_OS_LINUX
+    const auto oldIconTheme = Configs::dataManager->settingsRepo->use_system_toolbar_icons
+        ? Configs::dataManager->settingsRepo->toolbar_icon_theme : QString();
     D_SAVE_BOOL(use_system_toolbar_icons)
+    Configs::dataManager->settingsRepo->toolbar_icon_theme = ui->toolbar_icon_theme->currentData().toString();
+    const auto newIconTheme = Configs::dataManager->settingsRepo->use_system_toolbar_icons
+        ? Configs::dataManager->settingsRepo->toolbar_icon_theme : QString();
+    if (oldIconTheme != newIconTheme) CACHE.needRestart = true;
+#endif
     auto oldUseCustomIcon = Configs::dataManager->settingsRepo->use_custom_icons;
     Configs::dataManager->settingsRepo->use_custom_icons = ui->enable_custom_icon->isChecked();
     if (oldUseCustomIcon != Configs::dataManager->settingsRepo->use_custom_icons) CACHE.updateTrayIcon = true;

@@ -18,22 +18,22 @@ def run(command, *, cwd, env=None):
     subprocess.run(command, cwd=cwd, env=env, check=True)
 
 
-def main():
+def main(source=None, cases=(("default", []), ("enabled", ["--startup-enabled"]))):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("build_dir", type=Path)
     args = parser.parse_args()
     build = args.build_dir.resolve()
-    source = Path(__file__).with_suffix(".cpp").resolve()
+    source = (source or Path(__file__).with_suffix(".cpp")).resolve()
     cache = (build / "CMakeCache.txt").read_text().splitlines()
     cmake = next(line.split("=", 1)[1] for line in cache if line.startswith("CMAKE_COMMAND:"))
     run([cmake, "--build", str(build), "--target", "Throne"], cwd=build)
     entries = json.loads((build / "compile_commands.json").read_text())
     entry = next(item for item in entries if Path(item["file"]).name == "main.cpp"
                  and "Throne.dir" in item.get("command", " ".join(item.get("arguments", []))))
-    output = build / "toolbar-theme-icons-tests"
+    output = build / (source.stem.replace("_", "-") + "-tests")
     output.mkdir(exist_ok=True)
-    obj = output / "toolbar_theme_icons.o"
-    binary = output / "toolbar_theme_icons"
+    obj = output / (source.stem + ".o")
+    binary = output / source.stem
     compile_args = entry.get("arguments") or shlex.split(entry["command"])
     main_object = compile_args[compile_args.index("-o") + 1]
     compile_args[compile_args.index("-o") + 1] = str(obj)
@@ -65,8 +65,9 @@ def main():
     for key in ("DISPLAY", "WAYLAND_DISPLAY"):
         env.pop(key, None)
     env["QT_QPA_PLATFORM"] = "offscreen"
+    env["THRONE_TEST_ARTIFACT_DIR"] = str(output)
     # No normal application bootstrap or EngineHost::init. All DB state is temporary.
-    for label, arguments in (("default", []), ("enabled", ["--startup-enabled"])):
+    for label, arguments in cases:
         with tempfile.TemporaryDirectory(prefix="data-", dir=output) as temporary:
             env["HOME"] = temporary
             env["XDG_CONFIG_HOME"] = temporary

@@ -154,6 +154,7 @@ namespace Configs {
             {"h2_stream_receive_window",   &h2_stream_receive_window},
             {"h2_connection_receive_window", &h2_connection_receive_window},
             {"theme",                      &theme},
+            {"toolbar_icon_theme",         &toolbar_icon_theme},
             {"custom_inbound",             &custom_inbound},
             {"custom_route",               &custom_route_global},
             {"font",                       &font},
