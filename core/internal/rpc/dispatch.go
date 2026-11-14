@@ -124,6 +124,7 @@ var handlers = map[string]handlerFn{
 	"QueryStats":          handle(globalServer.QueryStats),
 	"QueryConnections":    handle(globalServer.QueryConnections),
 	"CloseConnections":    handle(globalServer.CloseConnections),
+	"ListProcesses":       handle(globalServer.ListProcesses),
 	"QueryAutoSelectors":  handle(globalServer.QueryAutoSelectors),
 	"AutoSelectorAction":  handle(globalServer.AutoSelectorAction),
 	"IsPrivileged":        handle(globalServer.IsPrivileged),
@@ -135,6 +136,7 @@ var handlers = map[string]handlerFn{
 	"WarpRegister":        handle(globalServer.WarpRegister),
 	"GenQuicSignature":    handle(globalServer.GenQuicSignature),
 	"InstallDashboard":    handle(globalServer.InstallDashboard),
+	"InstallTor":          handle(globalServer.InstallTor),
 	"QueryVPNStatus":      handle(globalServer.QueryVPNStatus),
 	"SubmitVPNChallenge":  handle(globalServer.SubmitVPNChallenge),
 	"CancelVPNChallenge":  handle(globalServer.CancelVPNChallenge),
@@ -147,6 +149,11 @@ var handlers = map[string]handlerFn{
 	"ScanURLTest":         handle(globalServer.ScanURLTest),
 	"ScanCheckNetwork":    handle(globalServer.ScanCheckNetwork),
 	"ParseRuleSet":        handle(globalServer.ParseRuleSet),
+	"ResolveDomains":      handle(globalServer.ResolveDomains),
+	"TestRoute":           handle(globalServer.TestRoute),
+	"ServiceTest":         handle(globalServer.ServiceTest),
+	"QueryServiceTest":    handle(globalServer.QueryServiceTest),
+	"ParseServiceChecks":  handle(globalServer.ParseServiceChecks),
 }
 
 func dispatch(methodName string, payload []byte) ([]byte, error) {

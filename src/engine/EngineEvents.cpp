@@ -16,8 +16,8 @@ namespace Engine {
         return self;
     }
 
-    void EngineEvents::SubscriptionNewGroup() {
-        emit instance()->subscriptionNewGroup();
+    void EngineEvents::SubscriptionNewGroup(int groupId) {
+        emit instance()->subscriptionNewGroup(groupId);
     }
 
     void EngineEvents::SubscriptionFinished(int importedCount, bool quiet) {
@@ -30,6 +30,14 @@ namespace Engine {
 
     void EngineEvents::SubscriptionDiff(const QString &title, const QString &body) {
         emit instance()->subscriptionDiff(title, body);
+    }
+
+    void EngineEvents::SubscriptionReplacedRunning(int profileId) {
+        emit instance()->subscriptionReplacedRunning(profileId);
+    }
+
+    void EngineEvents::RoutingRestartNeeded() {
+        emit instance()->routingRestartNeeded();
     }
 
     void EngineEvents::GroupOrderChanged(const QList<int> &groupIds) {
@@ -46,6 +54,14 @@ namespace Engine {
 
     void EngineEvents::ProfilesRemoved(const QList<int> &profileIds) {
         emit instance()->profilesRemoved(profileIds);
+    }
+
+    void EngineEvents::ProfilesChanged(const QList<int> &profileIds) {
+        emit instance()->profilesChanged(profileIds);
+    }
+
+    void EngineEvents::RoutesChanged() {
+        emit instance()->routesChanged();
     }
 
     void EngineEvents::SettingsChanged(const QStringList &keys) {
