@@ -1,0 +1,195 @@
+name: Windows x64 process-routing candidate
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  installer:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      INPUT_VERSION: 1.4.2-alpha.1
+      GOOS: windows
+      GOARCH: amd64
+      CGO_ENABLED: '0'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout pinned Throne GUI and core
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: throneproj/Throne
+          ref: f52f3769e645a589feac9911753fa28392dc2702
+          persist-credentials: false
+      - name: Checkout pinned sing-box fork
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: throneproj/sing-box
+          ref: 9c9776a477b6946ccce4fd4f8b93943056e997ea
+          path: sing-box-local
+          persist-credentials: false
+      - name: Install official Go
+        uses: actions/setup-go@v7.0.0
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: core/go.sum
+      - name: Apply reviewed patches and prepare installer
+        run: |
+          set -euo pipefail
+          echo 'ZGlmZiAtLWdpdCBhL3JvdXRlL3J1bGUvcHJvY2Vzc19rZXkuZ28gYi9yb3V0ZS9ydWxlL3Byb2Nlc3Nfa2V5LmdvCm5ldyBmaWxlIG1vZGUgMTAwNjQ0CmluZGV4IDAwMDAwMDAwLi5jNDUzMzkyOQotLS0gL2Rldi9udWxsCisrKyBiL3JvdXRlL3J1bGUvcHJvY2Vzc19rZXkuZ28KQEAgLTAsMCArMSwyOCBAQAorcGFja2FnZSBydWxlCisKK2ltcG9ydCAoCisJInJ1bnRpbWUiCisJInN0cmluZ3MiCispCisKKy8vIFdpbmRvd3MgcmVwb3J0cyB0aGUgaW1hZ2UncyBvcmlnaW5hbCBzcGVsbGluZywgd2hpbGUgb3JkaW5hcnkgV2luZG93cyBwYXRocworLy8gYXJlIGNhc2UtaW5zZW5zaXRpdmUuIE5vcm1hbGl6ZSBib3RoIHNpZGVzIG9mIGV4YWN0IHByb2Nlc3MgcnVsZXMsIG5vdCByZWdleGVzLgorLy8gRG8gbm90IGNsZWFuIHBhdGhzLCBzdHJpcCBwcmVmaXhlcywgdHJpbSBzcGFjZXMsIG9yIG1hdGNoIHBhcmVudCBkaXJlY3RvcmllczoKKy8vIHRob3NlIG9wZXJhdGlvbnMgY2FuIHR1cm4gYSBkaWZmZXJlbnQgZXhlY3V0YWJsZSBpbnRvIGEgcGVybWl0dGVkIG9uZS4KK2Z1bmMgcHJvY2Vzc05hbWVLZXkobmFtZSBzdHJpbmcpIHN0cmluZyB7CisJaWYgcnVudGltZS5HT09TID09ICJ3aW5kb3dzIiB7CisJCXJldHVybiBzdHJpbmdzLlRvTG93ZXIobmFtZSkKKwl9CisJcmV0dXJuIG5hbWUKK30KKworZnVuYyBwcm9jZXNzUGF0aEtleShwYXRoIHN0cmluZykgc3RyaW5nIHsKKwlpZiBydW50aW1lLkdPT1MgPT0gIndpbmRvd3MiIHsKKwkJcmV0dXJuIHdpbmRvd3NQcm9jZXNzUGF0aEtleShwYXRoKQorCX0KKwlyZXR1cm4gcGF0aAorfQorCitmdW5jIHdpbmRvd3NQcm9jZXNzUGF0aEtleShwYXRoIHN0cmluZykgc3RyaW5nIHsKKwlyZXR1cm4gc3RyaW5ncy5Ub0xvd2VyKHN0cmluZ3MuUmVwbGFjZUFsbChwYXRoLCAiLyIsIGBcYCkpCit9CmRpZmYgLS1naXQgYS9yb3V0ZS9ydWxlL3Byb2Nlc3Nfa2V5X3Rlc3QuZ28gYi9yb3V0ZS9ydWxlL3Byb2Nlc3Nfa2V5X3Rlc3QuZ28KbmV3IGZpbGUgbW9kZSAxMDA2NDQKaW5kZXggMDAwMDAwMDAuLjNmOWU4NzhhCi0tLSAvZGV2L251bGwKKysrIGIvcm91dGUvcnVsZS9wcm9jZXNzX2tleV90ZXN0LmdvCkBAIC0wLDAgKzEsNjggQEAKK3BhY2thZ2UgcnVsZQorCitpbXBvcnQgKAorCSJydW50aW1lIgorCSJ0ZXN0aW5nIgorCisJImdpdGh1Yi5jb20vc2FnZXJuZXQvc2luZy1ib3gvYWRhcHRlciIKKykKKworZnVuYyBUZXN0UHJvY2Vzc0V4YWN0TWF0Y2hpbmdQbGF0Zm9ybVNlbWFudGljcyh0ICp0ZXN0aW5nLlQpIHsKKwl3aW5kb3dzIDo9IHJ1bnRpbWUuR09PUyA9PSAid2luZG93cyIKKwl0ZXN0cyA6PSBbXXN0cnVjdCB7CisJCW5hbWUsIHJ1bGUsIG9ic2VydmVkIHN0cmluZworCQlwYXRoLCB3YW50ICAgICAgICAgICBib29sCisJfXsKKwkJeyJuYW1lIGV4YWN0IiwgIkFwcC5leGUiLCAiQXBwLmV4ZSIsIGZhbHNlLCB0cnVlfSwKKwkJeyJuYW1lIGNhc2UiLCAiQVBQLkVYRSIsICJBcHAuZXhlIiwgZmFsc2UsIHdpbmRvd3N9LAorCQl7Im5hbWUgZGlmZmVyZW50IiwgIkFwcC5leGUiLCAiSGVscGVyLmV4ZSIsIGZhbHNlLCBmYWxzZX0sCisJCXsicGF0aCBzcGFjZXMiLCBgQzpcUHJvZ3JhbSBGaWxlc1xBcHBcQXBwLmV4ZWAsIGBDOlxQcm9ncmFtIEZpbGVzXEFwcFxBcHAuZXhlYCwgdHJ1ZSwgdHJ1ZX0sCisJCXsicGF0aCBjYXNlIiwgYGM6XHByb2dyYW0gZmlsZXNcYXBwXEFQUC5FWEVgLCBgQzpcUHJvZ3JhbSBGaWxlc1xBcHBcQXBwLmV4ZWAsIHRydWUsIHdpbmRvd3N9LAorCQl7InBhdGggc2VwYXJhdG9ycyIsIGBDOi9Qcm9ncmFtIEZpbGVzL0FwcC9BcHAuZXhlYCwgYEM6XFByb2dyYW0gRmlsZXNcQXBwXEFwcC5leGVgLCB0cnVlLCB3aW5kb3dzfSwKKwkJeyJVTkMgc2VwYXJhdG9ycyIsIGAvL3NlcnZlci9zaGFyZS9BcHAuZXhlYCwgYFxcc2VydmVyXHNoYXJlXEFwcC5leGVgLCB0cnVlLCB3aW5kb3dzfSwKKwkJeyJkaWZmZXJlbnQgZGlyZWN0b3J5IiwgYEM6XEFwcFxBcHAuZXhlYCwgYEM6XE90aGVyXEFwcC5leGVgLCB0cnVlLCBmYWxzZX0sCisJCXsiaGVscGVyIG5vdCBpbmhlcml0ZWQiLCBgQzpcQXBwXEFwcC5leGVgLCBgQzpcQXBwXEhlbHBlci5leGVgLCB0cnVlLCBmYWxzZX0sCisJCXsibm90IHByZWZpeCIsIGBDOlxBcHBcQXBwLmV4ZWAsIGBDOlxBcHBcQXBwLmV4ZS5iYWtgLCB0cnVlLCBmYWxzZX0sCisJCXsibm8gZG90IGNsZWFuaW5nIiwgYEM6XEFwcFwuLlxBcHAuZXhlYCwgYEM6XEFwcC5leGVgLCB0cnVlLCBmYWxzZX0sCisJCXsibm8gdHJpbW1pbmciLCBgIEM6XEFwcC5leGVgLCBgQzpcQXBwLmV4ZWAsIHRydWUsIGZhbHNlfSwKKwkJeyJubyBkZXZpY2UgcHJlZml4IHN0cmlwcGluZyIsIGBDOlxBcHAuZXhlYCwgYFxcP1xDOlxBcHAuZXhlYCwgdHJ1ZSwgZmFsc2V9LAorCX0KKwlmb3IgXywgdHQgOj0gcmFuZ2UgdGVzdHMgeworCQl0LlJ1bih0dC5uYW1lLCBmdW5jKHQgKnRlc3RpbmcuVCkgeworCQkJbWV0YWRhdGEgOj0gJmFkYXB0ZXIuSW5ib3VuZENvbnRleHR7UHJvY2Vzc0luZm86ICZhZGFwdGVyLkNvbm5lY3Rpb25Pd25lcntQcm9jZXNzUGF0aHM6IFtdc3RyaW5ne3R0Lm9ic2VydmVkfX19CisJCQl2YXIgZ290IGJvb2wKKwkJCWlmIHR0LnBhdGggeworCQkJCWdvdCA9IE5ld1Byb2Nlc3NQYXRoSXRlbShbXXN0cmluZ3t0dC5ydWxlfSkuTWF0Y2gobWV0YWRhdGEpCisJCQl9IGVsc2UgeworCQkJCWdvdCA9IE5ld1Byb2Nlc3NJdGVtKFtdc3RyaW5ne3R0LnJ1bGV9KS5NYXRjaChtZXRhZGF0YSkKKwkJCX0KKwkJCWlmIGdvdCAhPSB0dC53YW50IHsKKwkJCQl0LkZhdGFsZigibWF0Y2ggPSAldiwgd2FudCAldiIsIGdvdCwgdHQud2FudCkKKwkJCX0KKwkJfSkKKwl9Cit9CisKK2Z1bmMgVGVzdFByb2Nlc3NSdWxlc01pc3NpbmdPd25lcih0ICp0ZXN0aW5nLlQpIHsKKwltZXRhZGF0YSA6PSAmYWRhcHRlci5JbmJvdW5kQ29udGV4dHt9CisJaWYgTmV3UHJvY2Vzc0l0ZW0oW11zdHJpbmd7ImFwcC5leGUifSkuTWF0Y2gobWV0YWRhdGEpIHx8IE5ld1Byb2Nlc3NQYXRoSXRlbShbXXN0cmluZ3tgQzpcYXBwLmV4ZWB9KS5NYXRjaChtZXRhZGF0YSkgeworCQl0LkZhdGFsKCJtaXNzaW5nIG93bmVyIG1hdGNoZWQiKQorCX0KK30KKworLy8gRXhlcmNpc2UgdGhlIFdpbmRvd3MgdHJhbnNmb3JtYXRpb24gb24gYWxsIENJIGhvc3RzOyBtYXRjaGVyIHBsYXRmb3JtIGJlaGF2aW9yCisvLyBpcyBzZXBhcmF0ZWx5IHRlc3RlZCBhYm92ZSBhbmQgbXVzdCBhbHNvIGJlIHJ1biBvbiBhIG5hdGl2ZSBXaW5kb3dzIHJ1bm5lci4KK2Z1bmMgVGVzdFdpbmRvd3NQcm9jZXNzUGF0aEtleSh0ICp0ZXN0aW5nLlQpIHsKKwljYXNlcyA6PSBtYXBbc3RyaW5nXXN0cmluZ3sKKwkJYEM6L1Byb2dyYW0gRmlsZXMvQXBwL0FQUC5FWEVgOiBgYzpccHJvZ3JhbSBmaWxlc1xhcHBcYXBwLmV4ZWAsCisJCWBcXFNlcnZlci9TaGFyZS9BcHAuZXhlYDogICAgICAgYFxcc2VydmVyXHNoYXJlXGFwcC5leGVgLAorCQlgQzpcQXBwXC4uXEFwcC5leGVgOiAgICAgICAgICAgIGBjOlxhcHBcLi5cYXBwLmV4ZWAsCisJCWAgQzpcQXBwLmV4ZWA6ICAgICAgICAgICAgICAgICAgYCBjOlxhcHAuZXhlYCwKKwkJYFxcP1xDOlxBcHAuZXhlYDogICAgICAgICAgICAgICBgXFw/XGM6XGFwcC5leGVgLAorCX0KKwlmb3IgaW5wdXQsIHdhbnQgOj0gcmFuZ2UgY2FzZXMgeworCQlpZiBnb3QgOj0gd2luZG93c1Byb2Nlc3NQYXRoS2V5KGlucHV0KTsgZ290ICE9IHdhbnQgeworCQkJdC5FcnJvcmYoImtleSglcSkgPSAlcSwgd2FudCAlcSIsIGlucHV0LCBnb3QsIHdhbnQpCisJCX0KKwl9Cit9CmRpZmYgLS1naXQgYS9yb3V0ZS9ydWxlL3J1bGVfaXRlbV9wcm9jZXNzX25hbWUuZ28gYi9yb3V0ZS9ydWxlL3J1bGVfaXRlbV9wcm9jZXNzX25hbWUuZ28KaW5kZXggM2U1OGM2NDcuLjkyOTY1MDdlIDEwMDY0NAotLS0gYS9yb3V0ZS9ydWxlL3J1bGVfaXRlbV9wcm9jZXNzX25hbWUuZ28KKysrIGIvcm91dGUvcnVsZS9ydWxlX2l0ZW1fcHJvY2Vzc19uYW1lLmdvCkBAIC0yMSw3ICsyMSw3IEBAIGZ1bmMgTmV3UHJvY2Vzc0l0ZW0ocHJvY2Vzc05hbWVMaXN0IFtdc3RyaW5nKSAqUHJvY2Vzc0l0ZW0gewogCQlwcm9jZXNzTWFwOiBtYWtlKG1hcFtzdHJpbmddYm9vbCksCiAJfQogCWZvciBfLCBwcm9jZXNzTmFtZSA6PSByYW5nZSBwcm9jZXNzTmFtZUxpc3QgewotCQlydWxlLnByb2Nlc3NNYXBbcHJvY2Vzc05hbWVdID0gdHJ1ZQorCQlydWxlLnByb2Nlc3NNYXBbcHJvY2Vzc05hbWVLZXkocHJvY2Vzc05hbWUpXSA9IHRydWUKIAl9CiAJcmV0dXJuIHJ1bGUKIH0KQEAgLTMxLDcgKzMxLDcgQEAgZnVuYyAociAqUHJvY2Vzc0l0ZW0pIE1hdGNoKG1ldGFkYXRhICphZGFwdGVyLkluYm91bmRDb250ZXh0KSBib29sIHsKIAkJcmV0dXJuIGZhbHNlCiAJfQogCXJldHVybiBzbGljZXMuQ29udGFpbnNGdW5jKG1ldGFkYXRhLlByb2Nlc3NJbmZvLlByb2Nlc3NQYXRocywgZnVuYyhwcm9jZXNzUGF0aCBzdHJpbmcpIGJvb2wgewotCQlyZXR1cm4gci5wcm9jZXNzTWFwW2ZpbGVwYXRoLkJhc2UocHJvY2Vzc1BhdGgpXQorCQlyZXR1cm4gci5wcm9jZXNzTWFwW3Byb2Nlc3NOYW1lS2V5KGZpbGVwYXRoLkJhc2UocHJvY2Vzc1BhdGgpKV0KIAl9KQogfQogCmRpZmYgLS1naXQgYS9yb3V0ZS9ydWxlL3J1bGVfaXRlbV9wcm9jZXNzX3BhdGguZ28gYi9yb3V0ZS9ydWxlL3J1bGVfaXRlbV9wcm9jZXNzX3BhdGguZ28KaW5kZXggOTM2N2M0MzkuLjhlNzc0Mjg5IDEwMDY0NAotLS0gYS9yb3V0ZS9ydWxlL3J1bGVfaXRlbV9wcm9jZXNzX3BhdGguZ28KKysrIGIvcm91dGUvcnVsZS9ydWxlX2l0ZW1fcHJvY2Vzc19wYXRoLmdvCkBAIC0yMSw3ICsyMSw3IEBAIGZ1bmMgTmV3UHJvY2Vzc1BhdGhJdGVtKHByb2Nlc3NOYW1lTGlzdCBbXXN0cmluZykgKlByb2Nlc3NQYXRoSXRlbSB7CiAJCXByb2Nlc3NNYXA6IG1ha2UobWFwW3N0cmluZ11ib29sKSwKIAl9CiAJZm9yIF8sIHByb2Nlc3NOYW1lIDo9IHJhbmdlIHByb2Nlc3NOYW1lTGlzdCB7Ci0JCXJ1bGUucHJvY2Vzc01hcFtwcm9jZXNzTmFtZV0gPSB0cnVlCisJCXJ1bGUucHJvY2Vzc01hcFtwcm9jZXNzUGF0aEtleShwcm9jZXNzTmFtZSldID0gdHJ1ZQogCX0KIAlyZXR1cm4gcnVsZQogfQpAQCAtMzAsNyArMzAsNyBAQCBmdW5jIChyICpQcm9jZXNzUGF0aEl0ZW0pIE1hdGNoKG1ldGFkYXRhICphZGFwdGVyLkluYm91bmRDb250ZXh0KSBib29sIHsKIAlpZiBtZXRhZGF0YS5Qcm9jZXNzSW5mbyA9PSBuaWwgewogCQlyZXR1cm4gZmFsc2UKIAl9Ci0JaWYgc2xpY2VzLkNvbnRhaW5zRnVuYyhtZXRhZGF0YS5Qcm9jZXNzSW5mby5Qcm9jZXNzUGF0aHMsIGZ1bmMocHJvY2Vzc1BhdGggc3RyaW5nKSBib29sIHsgcmV0dXJuIHIucHJvY2Vzc01hcFtwcm9jZXNzUGF0aF0gfSkgeworCWlmIHNsaWNlcy5Db250YWluc0Z1bmMobWV0YWRhdGEuUHJvY2Vzc0luZm8uUHJvY2Vzc1BhdGhzLCBmdW5jKHByb2Nlc3NQYXRoIHN0cmluZykgYm9vbCB7IHJldHVybiByLnByb2Nlc3NNYXBbcHJvY2Vzc1BhdGhLZXkocHJvY2Vzc1BhdGgpXSB9KSB7CiAJCXJldHVybiB0cnVlCiAJfQogCWlmIEMuSXNBbmRyb2lkIHsK' | base64 -d > process-windows.patch
+          echo 'ZGlmZiAtLWdpdCBhL2NvcmUvaW50ZXJuYWwvZ3VhcmQvYmFja2VuZF93aW5kb3dzX3Rlc3QuZ28gYi9jb3JlL2ludGVybmFsL2d1YXJkL2JhY2tlbmRfd2luZG93c190ZXN0LmdvCm5ldyBmaWxlIG1vZGUgMTAwNjQ0CmluZGV4IDAwMDAwMDAuLjdlMmI4ZTAKLS0tIC9kZXYvbnVsbAorKysgYi9jb3JlL2ludGVybmFsL2d1YXJkL2JhY2tlbmRfd2luZG93c190ZXN0LmdvCkBAIC0wLDAgKzEsOTggQEAKK3BhY2thZ2UgZ3VhcmQKKworaW1wb3J0ICgKKwkicnVudGltZSIKKwkic2xpY2VzIgorCSJ0ZXN0aW5nIgorCSJ1bnNhZmUiCispCisKKy8vIFRoZXNlIGFyZSBydWxlc2V0IGNvbnN0cnVjdGlvbiB0ZXN0cy4gVGhleSBkbyBub3QgcmVwbGFjZSBlbGV2YXRlZCBXaW5kb3dzCisvLyBpbnRlZ3JhdGlvbiB0ZXN0czogb25seSBXRlAgY2FuIGVzdGFibGlzaCB3aGljaCBpbnRlcmZhY2UgYW4gYWN0dWFsIGZsb3cgdXNlcy4KK2Z1bmMgVGVzdFR1blJ1bGVzUGVybWl0SW50ZXJmYWNlTm90QXBwbGljYXRpb24odCAqdGVzdGluZy5UKSB7CisJdmFyIHBpbiBydW50aW1lLlBpbm5lcgorCWRlZmVyIHBpbi5VbnBpbigpCisJaWYgcnVsZXMgOj0gdHVuUnVsZXMobmlsLCAmcGluKTsgbGVuKHJ1bGVzKSAhPSAwIHsKKwkJdC5GYXRhbGYoImFic2VudCBUVU4gbXVzdCBub3QgaW5zdGFsbCBhbnkgcGVybWl0czogJXYiLCBydWxlcykKKwl9CisJdHVucyA6PSBbXXR1bkFkYXB0ZXJ7e2x1aWQ6IDQyLCBpbmRleDogN30sIHtsdWlkOiA0MywgaW5kZXg6IDh9fQorCXJ1bGVzIDo9IHR1blJ1bGVzKHR1bnMsICZwaW4pCisJaWYgbGVuKHJ1bGVzKSAhPSAzIHsKKwkJdC5GYXRhbGYoImdvdCAlZCBydWxlIGdyb3Vwcywgd2FudCBBTEUgYW5kIHR3byBmb3J3YXJkaW5nIGdyb3VwcyIsIGxlbihydWxlcykpCisJfQorCWlmICFzbGljZXMuRXF1YWwocnVsZXNbMF0ubGF5ZXJzLCBhbGVMYXllcnMpIHsKKwkJdC5GYXRhbCgiVFVOIG11c3QgY292ZXIgYm90aCBhZGRyZXNzIGZhbWlsaWVzIGFuZCBib3RoIEFMRSBkaXJlY3Rpb25zIikKKwl9CisJZm9yIGksIHJ1bGUgOj0gcmFuZ2UgcnVsZXMgeworCQlpZiBydWxlLmFjdGlvbiAhPSBmd3BBY3Rpb25QZXJtaXQgfHwgcnVsZS53ZWlnaHQgPD0gd2VpZ2h0QmxvY2sgfHwgbGVuKHJ1bGUuY29uZGl0aW9ucykgIT0gbGVuKHR1bnMpIHsKKwkJCXQuRmF0YWxmKCJ1bmV4cGVjdGVkIHBlcm1pdDogJSt2IiwgcnVsZSkKKwkJfQorCQlmb3IgaiwgY29uZGl0aW9uIDo9IHJhbmdlIHJ1bGUuY29uZGl0aW9ucyB7CisJCQlpZiBjb25kaXRpb24ubWF0Y2hUeXBlICE9IGZ3cE1hdGNoRXF1YWwgeworCQkJCXQuRmF0YWwoIlRVTiBtYXRjaCBtdXN0IGJlIGV4YWN0IikKKwkJCX0KKwkJCWlmIGkgPT0gMCB7CisJCQkJaWYgY29uZGl0aW9uLmZpZWxkS2V5ICE9IGNvbmRpdGlvbklQTG9jYWxJbnRlcmZhY2UgfHwgY29uZGl0aW9uLmNvbmRpdGlvblZhbHVlLnR5cCAhPSBmd3BVaW50NjQgeworCQkJCQl0LkZhdGFsKCJBTEUgcGVybWl0IG11c3QgbWF0Y2ggdGhlIFRVTiBpbnRlcmZhY2UsIG5vdCBwcm9jZXNzIGlkZW50aXR5IG9yIGRlc3RpbmF0aW9uIikKKwkJCQl9CisJCQkJaWYgZ290IDo9ICooKnVpbnQ2NCkodW5zYWZlLlBvaW50ZXIoY29uZGl0aW9uLmNvbmRpdGlvblZhbHVlLnZhbHVlKSk7IGdvdCAhPSB0dW5zW2pdLmx1aWQgeworCQkJCQl0LkZhdGFsZigiTFVJRCA9ICVkLCB3YW50ICVkIiwgZ290LCB0dW5zW2pdLmx1aWQpCisJCQkJfQorCQkJfSBlbHNlIHsKKwkJCQlmaWVsZCA6PSBjb25kaXRpb25Tb3VyY2VJbnRlcmZhY2VJbmRleAorCQkJCWlmIGkgPT0gMiB7CisJCQkJCWZpZWxkID0gY29uZGl0aW9uRGVzdGluYXRpb25JbnRlcmZhY2VJbmRleAorCQkJCX0KKwkJCQlpZiBjb25kaXRpb24uZmllbGRLZXkgIT0gZmllbGQgfHwgY29uZGl0aW9uLmNvbmRpdGlvblZhbHVlLnR5cCAhPSBmd3BVaW50MzIgfHwgY29uZGl0aW9uLmNvbmRpdGlvblZhbHVlLnZhbHVlICE9IHVpbnRwdHIodHVuc1tqXS5pbmRleCkgeworCQkJCQl0LkZhdGFsKCJmb3J3YXJkIHBlcm1pdCBtdXN0IG1hdGNoIHRoZSBleGFjdCBUVU4gaW5kZXgiKQorCQkJCX0KKwkJCX0KKwkJfQorCX0KK30KKworZnVuYyBUZXN0QmxvY2tSdWxlc0ZhaWxDbG9zZWRXaXRob3V0VHVuKHQgKnRlc3RpbmcuVCkgeworCXJ1bGVzIDo9IGJsb2NrUnVsZXMoKQorCWlmIGxlbihydWxlcykgIT0gMSB7CisJCXQuRmF0YWxmKCJnb3QgJWQgYmxvY2sgZ3JvdXBzIiwgbGVuKHJ1bGVzKSkKKwl9CisJcnVsZSA6PSBydWxlc1swXQorCWlmIHJ1bGUuYWN0aW9uICE9IGZ3cEFjdGlvbkJsb2NrIHx8IGxlbihydWxlLmNvbmRpdGlvbnMpICE9IDAgeworCQl0LkZhdGFsKCJmYWxsYmFjayBtdXN0IGJsb2NrIHVuY29uZGl0aW9uYWxseSIpCisJfQorCWlmICFzbGljZXMuRXF1YWwocnVsZS5sYXllcnMsIHNsaWNlcy5Db25jYXQoYWxlTGF5ZXJzLCBmb3J3YXJkTGF5ZXJzKSkgeworCQl0LkZhdGFsKCJmYWxsYmFjayBtdXN0IGNvdmVyIElQdjQvSVB2NiBBTEUgYW5kIGZvcndhcmRpbmciKQorCX0KK30KKworZnVuYyBUZXN0Q29yZVBlcm1pdEhhc05vRGVzdGluYXRpb25Pck91dGJvdW5kUmVzdHJpY3Rpb24odCAqdGVzdGluZy5UKSB7CisJdmFyIHBpbiBydW50aW1lLlBpbm5lcgorCWRlZmVyIHBpbi5VbnBpbigpCisJaWQgOj0gJmZ3cEJ5dGVCbG9ie30KKwlydWxlcyA6PSBiYXNlUnVsZXMoJmNvbmZpZ3t9LCBbXSpmd3BCeXRlQmxvYntpZH0sICZwaW4pCisJY29yZSA6PSBydWxlc1swXQorCWlmIGNvcmUuYWN0aW9uICE9IGZ3cEFjdGlvblBlcm1pdCB8fCAhc2xpY2VzLkVxdWFsKGNvcmUubGF5ZXJzLCBhbGVMYXllcnMpIHx8IGxlbihjb3JlLmNvbmRpdGlvbnMpICE9IDEgeworCQl0LkZhdGFsZigidW5leHBlY3RlZCBjb3JlIHBlcm1pdDogJSt2IiwgY29yZSkKKwl9CisJaWYgYyA6PSBjb3JlLmNvbmRpdGlvbnNbMF07IGMuZmllbGRLZXkgIT0gY29uZGl0aW9uQUxFQXBwSUQgfHwgYy5tYXRjaFR5cGUgIT0gZndwTWF0Y2hFcXVhbCB8fCBjLmNvbmRpdGlvblZhbHVlLnR5cCAhPSBmd3BCeXRlQmxvYlR5cGUgeworCQl0LkZhdGFsKCJjb3JlIHBlcm1pdCBtdXN0IHVzZSBhcHBsaWNhdGlvbiBJRCBvbmx5LCBhbGxvd2luZyBib3RoIERJUkVDVCBhbmQgUFJPWFkgc29ja2V0cyIpCisJfQorCWlmIGNvcmUud2VpZ2h0IDw9IHdlaWdodFR1biB8fCBjb3JlLndlaWdodCA8PSB3ZWlnaHRMQU5ETlMgfHwgd2VpZ2h0VHVuIDw9IHdlaWdodExBTkROUyB8fCB3ZWlnaHRMQU5ETlMgPD0gd2VpZ2h0TEFOIHx8IHdlaWdodExBTiA8PSB3ZWlnaHRCbG9jayB7CisJCXQuRmF0YWwoImNvcmUgYW5kIFRVTiBtdXN0IG92ZXJyaWRlIExBTiBETlMgYmxvY2tzOyBMQU4gRE5TIGJsb2NrcyBtdXN0IG92ZXJyaWRlIExBTiBwZXJtaXRzIikKKwl9Cit9CisKK2Z1bmMgVGVzdFR1bkFsaWFzTWF0Y2godCAqdGVzdGluZy5UKSB7CisJZm9yIF8sIHRjIDo9IHJhbmdlIFtdc3RydWN0IHsKKwkJYWxpYXMgc3RyaW5nCisJCXdhbnQgIGJvb2wKKwl9eworCQl7InRocm9uZS10dW4iLCB0cnVlfSwgeyJUSFJPTkUtVFVOIiwgdHJ1ZX0sIHsidGhyb25lLXR1biAyIiwgdHJ1ZX0sCisJCXsidGhyb25lLXR1blgiLCBmYWxzZX0sIHsidGhyb25lLXR1biBldmlsIiwgZmFsc2V9LCB7InRocm9uZS10dW4gNjU1MzYiLCBmYWxzZX0sCisJCXsib3RoZXIiLCBmYWxzZX0sIHsiIiwgZmFsc2V9LAorCX0geworCQlpZiBnb3QgOj0gaXNUdW5BbGlhcyh0Yy5hbGlhcywgInRocm9uZS10dW4iKTsgZ290ICE9IHRjLndhbnQgeworCQkJdC5FcnJvcmYoImlzVHVuQWxpYXMoJXEpID0gJXYsIHdhbnQgJXYiLCB0Yy5hbGlhcywgZ290LCB0Yy53YW50KQorCQl9CisJfQorfQpkaWZmIC0tZ2l0IGEvdmFsaWRhdGlvbi9XSU5ET1dTLUlOVEVHUkFUSU9OLm1kIGIvdmFsaWRhdGlvbi9XSU5ET1dTLUlOVEVHUkFUSU9OLm1kCm5ldyBmaWxlIG1vZGUgMTAwNjQ0CmluZGV4IDAwMDAwMDAuLjc2ZjMxNWMKLS0tIC9kZXYvbnVsbAorKysgYi92YWxpZGF0aW9uL1dJTkRPV1MtSU5URUdSQVRJT04ubWQKQEAgLTAsMCArMSw3NiBAQAorIyBXaW5kb3dzIHJvdXRpbmcgYW5kIGtpbGwtc3dpdGNoIGFjY2VwdGFuY2UgdGVzdAorCitTdGF0dXM6IE5PVCBFWEVDVVRFRC4gVGhlIGF2YWlsYWJsZSBleGVjdXRvciBpcyBMaW51eDsgbm8gV2luZG93cyBrZXJuZWwsCitXRlAsIFdpblR1biBvciB1c2FibGUgV2luZG93cyBWUE4gcHJvZmlsZSBpcyBhdmFpbGFibGUuIENyb3NzLWNvbXBpbGF0aW9uIGlzCitub3QgYW4gaW50ZWdyYXRpb24gcGFzcy4gRG8gbm90IHJlbGVhc2UgYSBzZWN1cml0eSBhc3N1cmFuY2UgYmFzZWQgb24gdGhpcyBmaWxlLgorCitVc2UgYSBkaXNwb3NhYmxlIFdpbmRvd3MgMTEgeDY0IFZNIG9yIGRlZGljYXRlZCB0ZXN0IFBDLiBLZWVwIGNvbnNvbGUgYWNjZXNzCitvdXRzaWRlIHRoZSB0ZXN0ZWQgbmV0d29yay4gU2F2ZSBpdHMgZXhpc3RpbmcgY29uZmlnIGFuZCBjYXB0dXJlIGNvbmZpZ3VyYXRpb247CitkbyBub3Qgb3ZlcndyaXRlIGFuIGV2ZXJ5ZGF5IHVzZXIncyByb3V0aW5nIG9yIGZpcmV3YWxsLiBFbmFibGluZyBhIGtpbGwgc3dpdGNoCitjaGFuZ2VzIHNlY3VyaXR5L25ldHdvcmsgc2V0dGluZ3MgYW5kIHJlcXVpcmVzIGFjdGlvbi10aW1lIGF1dGhvcml6YXRpb24uCisKKyMjIEV2aWRlbmNlIGFuZCB0ZXN0IHNldHVwCisKKzEuIFJlY29yZCBUaHJvbmUvQ29yZSB2ZXJzaW9ucyBhbmQgaGFzaGVzLCBjb25maWcgZXhwb3J0LCBXaW5kb3dzIGJ1aWxkLCBhZGFwdGVyCisgICBuYW1lcy9pbmRpY2VzLCBJUHY0IGFuZCBJUHY2IHBoeXNpY2FsIHJvdXRlcy4gUmVkYWN0IGFsbCBwcm94eSBjcmVkZW50aWFscy4KKzIuIE9idGFpbiB0cnVzdGVkIElQdjQgYW5kIElQdjYgdGVzdCBzZXJ2ZXJzIHdpdGggcHVibGljLUlQIGVjaG8sIFRDUC9VRFAgYW5kIEROUworICAgcXVlcnkgbG9nZ2luZzsgdXNlIHVuaXF1ZSBydW4gSURzL2hvc3RuYW1lcyB0byBjb3JyZWxhdGUgcGFja2V0IGNhcHR1cmVzLgorICAgQ29uZmlybSBib3RoIElQIGZhbWlsaWVzIHdvcmsgd2l0aG91dCBWUE4uIE1hcmsgSVB2NiB0ZXN0cyB1bmF2YWlsYWJsZSB3aGVuCisgICB0aGUgbmV0d29yayBsYWNrcyBJUHY2LCBuZXZlciBwYXNzaW5nIGJ5IGFic2VuY2Ugb2YgY29ubmVjdGl2aXR5LgorMy4gUmVjb3JkIGJhc2VsaW5lIHBoeXNpY2FsIHB1YmxpYyBJUCBhbmQgdGhlIHByb2ZpbGUncyBwcm94eSBJUC4gVGhleSBtdXN0IGJlCisgICBkaXN0aW5ndWlzaGFibGUuIFJ1biBXaW5kb3dzIHBhY2tldCBjYXB0dXJlIG9uICpwaHlzaWNhbCogYW5kIFRVTiBhZGFwdGVycworICAgcGx1cyBXRlAgZHJvcC9hdWRpdCBjYXB0dXJlLiBBIHB1YmxpYyBJUCBhbG9uZSBjYW5ub3QgZGlzdGluZ3Vpc2ggYSBsZWdpdGltYXRlCisgICBjb3JlIERJUkVDVCBjb25uZWN0aW9uIGZyb20gYW4gYXBwbGljYXRpb24gYnlwYXNzaW5nIFRVTi4KKzQuIEJ1aWxkIHRoZSBwcm9iZSB3aXRoIGBnbyBidWlsZCAtbyByb3V0aW5nLXByb2JlLmV4ZSAuL2AgaW4gYHZhbGlkYXRpb24vcHJvYmVgLgorICAgTWFrZSBzZXBhcmF0ZSBjb3BpZXM6IGBkaXJlY3QtbmFtZS5leGVgLCBgcHJveHktbmFtZS5leGVgLCBgZGVmYXVsdC5leGVgLAorICAgYW5kIGBDOlxUZXN0IEFwcHNcRGlyZWN0IEhlbHBlclxwYXRoIHByb2JlLmV4ZWAuIFRoZSBwcm9iZSBkZWxpYmVyYXRlbHkgaGFzCisgICBubyBleHBsaWNpdCBwcm94eSBvciBpbnRlcmZhY2UgYmluZGluZy4gSXQgcmVwb3J0cyBhcHBsaWNhdGlvbiBsb2NhbC9yZW1vdGUKKyAgIHNvY2tldHMgYW5kIHNlcnZlciBib2R5LiBJdCBkb2VzIG5vdCBvYnNlcnZlIHRoZSBjb3JlJ3MgcGh5c2ljYWwgZWdyZXNzLgorNS4gSW4gYSBjb3B5IG9mIHRoZSByb3V0aW5nIHByb2ZpbGUsIHVzZSBgcHJvY2Vzc19uYW1lYCBmb3IgZGlyZWN0LW5hbWUuZXhlIGFuZAorICAgcHJveHktbmFtZS5leGU7IHVzZSBgcHJvY2Vzc19wYXRoYCBmb3IgdGhlIHNwYWNlZCBwYXRoLiBLZWVwIGRlZmF1bHQgUFJPWFkuCisgICBBZGQgZG9tYWluIGFuZCBwdWJsaWMgSVAgRElSRUNUIHJ1bGVzIHRvIHNlcGFyYXRlbHkgY29udHJvbGxlZCBkZXN0aW5hdGlvbnMuCisgICBUZXN0IGBFbmFibGUgVHVuIFJvdXRpbmdgIGJvdGggb24gYW5kIG9mZjsga2VlcCBUVU4gYW5kIEtpbGwgU3dpdGNoIGVuYWJsZWQuCisgICBEbyBub3QgYWRkIHRob3NlIGFwcGxpY2F0aW9ucyB0byBraWxsLXN3aXRjaCBleGVtcHRpb25zLgorNi4gU3RhcnQgYSBmcmVzaCBwcm9iZSBjb25uZWN0aW9uIHBlciByZXF1ZXN0LCBlLmcuOgorICAgYGRpcmVjdC1uYW1lLmV4ZSAtdXJsIGh0dHBzOi8vWU9VUi1DT05UUk9MTEVELUVORFBPSU5UL2VjaG8gLWNvdW50IDIwYAorICAgb3IgdXNlIGAtY291bnQgMCAtaW50ZXJ2YWwgMTAwbXNgIGZvciBjb250aW51b3VzIHRyYW5zaXRpb25zLiBTYXZlIEpTT05MIGFuZAorICAgc2VydmVyL2NhcHR1cmUgbG9ncyB3aXRoIHN5bmNocm9uaXplZCBjbG9ja3MuIFJ1biBhbm90aGVyIHByb2JlIHNpbXVsdGFuZW91c2x5CisgICB3aXRoIGFuIHVubWF0Y2hlZCBwcm9jZXNzIG5hbWUuIFVzZSBleHBsaWNpdCBsaXRlcmFsLUlQIGVuZHBvaW50cyBhcyB3ZWxsIGFzCisgICB1bmlxdWUgRE5TIG5hbWVzIHRvIHNlcGFyYXRlIHJvdXRpbmcgZmFpbHVyZSBmcm9tIG5hbWUgcmVzb2x1dGlvbiBmYWlsdXJlLgorCisjIyBNYXRyaXg6IGFsbCByb3dzIHJlcXVpcmUgSVB2NCBhbmQgSVB2NiB3aGVyZSBzdXBwb3J0ZWQKKworfCBTY2VuYXJpbyB8IFJlcXVpcmVkIGV2aWRlbmNlIHwKK3wgLS0tIHwgLS0tIHwKK3wgcHJvY2Vzc19uYW1lIERJUkVDVCB8IFNlcnZlciBzZWVzIHBoeXNpY2FsIHB1YmxpYyBJUDsgb3JpZ2luYWwgYXBwIGZsb3cgZW50ZXJzIFRVTjsgcGh5c2ljYWwgb3V0Ym91bmQgYmVsb25ncyB0byBUaHJvbmVDb3JlLCBub3QgYXBwIHwKK3wgcHJvY2Vzc19wYXRoIERJUkVDVCB8IFNhbWUsIGluY2x1ZGluZyBzcGFjZXMgYW5kIHBhdGggc2VwYXJhdG9yL2Nhc2UgdmFyaWFudHM7IHByZXNlcnZlIGxpdGVyYWwgZXhhY3QtcGF0aCBzZW1hbnRpY3MgYW5kIG5vIHNpYmxpbmctcHJvY2VzcyBwZXJtaXNzaW9uIHwKK3wgRG9tYWluL0lQIERJUkVDVCB8IFNhbWUgd2l0aCB1bm1hdGNoZWQgYXBwOyB2ZXJpZnkgaGlnaGVyLXByaW9yaXR5IFBST1hZIGV4Y2VwdGlvbnMgc3RpbGwgd2luIHwKK3wgcHJvY2VzcyBQUk9YWSB8IFNlcnZlciBzZWVzIHByb3h5IElQOyBwaHlzaWNhbCB0cmFmZmljIG9ubHkgdG8gaW50ZW5kZWQgdHVubmVsL3Byb3h5IGVuZHBvaW50cyB8Cit8IERlZmF1bHQvbm8gcHJvY2VzcyBtYXRjaCB8IEV4aXN0aW5nIGRlZmF1bHQgc2VtYW50aWNzLCBubyB1bmludGVuZGVkIGZhbGxiYWNrIERJUkVDVCB8Cit8IEhlbHBlci9jaGlsZCBwcm9jZXNzIHwgQWN0dWFsIGNvbm5lY3RpbmcgZXhlY3V0YWJsZSBpcyBpZGVudGlmaWVkOyBwYXJlbnQgcnVsZSBtdXN0IE5PVCBzaWxlbnRseSBtYXRjaCBhIGRpZmZlcmVudCBoZWxwZXI7IGFkZCBhbiBleHBsaWNpdCBoZWxwZXIgcnVsZSBvbmx5IHdoZW4gaW50ZW5kZWQgfAorfCBETlMgfCBVbmlxdWUgbmFtZXMgcmVzb2x2ZSB0aHJvdWdoIGNvbmZpZ3VyZWQgRE5TIHBhdGg7IHBhY2tldCBjYXB0dXJlL3NlcnZlciBsb2dzIHByb3ZlIG5vIHVuaW50ZW5kZWQgcGh5c2ljYWwgcG9ydCA1My84NTMgb3IgdW5leHBlY3RlZCByZXNvbHZlciB0cmFmZmljOyBpZGVudGlmeSBhcHAgRG9IIHNlcGFyYXRlbHkgfAorfCBQcm9maWxlIHN0b3AgfCBDb250aW51b3VzIHJlcXVlc3RzIGZhaWwgb25jZSBwcm9maWxlIHN0b3BwZWQgd2hpbGUgZ3VhcmQgcmVtYWlucyBSRUFEWTsgbm8gYXBwLW93bmVkIHBoeXNpY2FsIEludGVybmV0IGVncmVzcyB8Cit8IERpc2Nvbm5lY3QvcmVjb25uZWN0IHwgTm8gYXBwIEludGVybmV0IGVncmVzcyBvdXRzaWRlIGNvcmUvVFVOIGR1cmluZyB0cmFuc2l0aW9uOyBpbnRlbmRlZCByb3V0ZXMgcmVzdW1lIGFmdGVyIFJFQURZIHwKK3wgUHJvZmlsZSBBIHRvIEIgfCBObyB1bnByb3RlY3RlZCB0cmFuc2l0aW9uLCB0aGVuIHByb3h5IHJlcXVlc3RzIHVzZSBCJ3MgcHVibGljIElQIGFuZCBkaXJlY3QgcmVxdWVzdHMgcmV0YWluIGRpcmVjdCBJUCB8Cit8IENvcmUgY3Jhc2ggfCBLaWxsIG9ubHkgYWN0aXZlIFZQTiBjb3JlLCBub3QgZ3VhcmQ7IGd1YXJkIHByb2Nlc3MgYW5kIGJsb2NrIGZpbHRlcnMgc3Vydml2ZTsgYXBwIHJlcXVlc3RzIGZhaWwgdW50aWwgY29yZSByZWNvdmVyZWQgfAorfCBTZXR0aW5ncyByZWFwcGx5IHwgUmVhcHBseSByb3V0aW5nIGFuZCB0b2dnbGUgYEVuYWJsZSBUdW4gUm91dGluZ2A7IFRVTiByZXN0YXJ0L3JlYmluZCBkb2VzIG5vdCByZW1vdmUgZ3VhcmQgYmxvY2sgcnVsZXMgb3IgcGVybWFuZW50bHkgbG9zZSBjb25uZWN0aXZpdHkgfAorCitHdWFyZCB0ZXJtaW5hdGlvbiBpcyBhIHNlcGFyYXRlIGZhaWx1cmUgbW9kZWw6IFdGUCB1c2VzIGEgZHluYW1pYyBzZXNzaW9uOworY2xvc2luZy9jcmFzaGluZyB0aGUgZ3VhcmQgcmVtb3ZlcyBpdHMgZmlsdGVycy4gRG8gbm90IGNvbmZ1c2UgYWN0aXZlIFZQTiBjb3JlCitjcmFzaCB3aXRoIGd1YXJkIGNyYXNoLiBFeGlzdGluZyBpbnRlbnRpb25hbCBMQU4vbGluay9BUEkgZXhjZXB0aW9ucyBhcmUgbm90Citwcm9vZiBvZiBJbnRlcm5ldCBsZWFrcywgYnV0IGRvY3VtZW50IHRoZW0gYW5kIHRlc3QgRE5TIHRvIExBTiByb3V0ZXJzIHRvby4KKworQSB0aW1lb3V0IGlzIG5vdCBwcm9vZiBvZiBubyBsZWFrOiBjaGVjayBjYXB0dXJlIGFuZCBjb250cm9sbGVkIHNlcnZlciBsb2dzLAoraW5jbHVkaW5nIHNob3J0IGludGVydmFscyB3aGlsZSBzd2l0Y2hpbmcvc3RvcHBpbmcsIHdpdGggZnJlc2ggVENQIGFuZCBVRFAKK2Zsb3dzLiBBZnRlciByZWNvdmVyeSwgY29uZmlybSB0cmFmZmljIHN0aWxsIHdvcmtzOyBhbiBhbHdheXMtYmxvY2tlZCBzeXN0ZW0KK211c3Qgbm90IGJlIGNhbGxlZCBhIHBhc3Npbmcga2lsbCBzd2l0Y2guCisKKyMjIFVuaXQtdGVzdCBjb21tYW5kcyAobm9uLWVsZXZhdGVkKQorCitgY2QgY29yZTsgZ28gdGVzdCAuL2ludGVybmFsL2d1YXJkYCBvbiBXaW5kb3dzIHJ1bnMgdGhlIGNvbnN0cnVjdGlvbiB0ZXN0cyBpbgorYGJhY2tlbmRfd2luZG93c190ZXN0LmdvYC4gVGhleSB2ZXJpZnkgZ2VuZXJhdGVkIGZpbHRlciBjb250cmFjdHMsIG5vdCBXRlAncworcnVudGltZSBpbnRlcnByZXRhdGlvbi4gT24gTGludXgsIGBHT09TPXdpbmRvd3MgR09BUkNIPWFtZDY0IGdvIHRlc3QgLWMKKy4vaW50ZXJuYWwvZ3VhcmRgIGNoZWNrcyBvbmx5IGJ1aWxkIGNvbXBhdGliaWxpdHkuCisKK2BjZCB2YWxpZGF0aW9uL3Byb2JlOyBnbyB0ZXN0IC1yYWNlIC4vLi4uYCBjaGVja3MgcHJvYmUgSFRUUC9lcnJvci90aW1lb3V0IHBhdGhzCithZ2FpbnN0IGxvY2FsIEhUVFAgc2VydmVycy4gSXQgZG9lcyBub3QgdGVzdCBUaHJvbmUuCmRpZmYgLS1naXQgYS92YWxpZGF0aW9uL3Byb2JlL2dvLm1vZCBiL3ZhbGlkYXRpb24vcHJvYmUvZ28ubW9kCm5ldyBmaWxlIG1vZGUgMTAwNjQ0CmluZGV4IDAwMDAwMDAuLmYwYzY5YjAKLS0tIC9kZXYvbnVsbAorKysgYi92YWxpZGF0aW9uL3Byb2JlL2dvLm1vZApAQCAtMCwwICsxLDMgQEAKK21vZHVsZSB0aHJvbmUtcm91dGluZy1wcm9iZQorCitnbyAxLjI2LjAKZGlmZiAtLWdpdCBhL3ZhbGlkYXRpb24vcHJvYmUvbWFpbi5nbyBiL3ZhbGlkYXRpb24vcHJvYmUvbWFpbi5nbwpuZXcgZmlsZSBtb2RlIDEwMDY0NAppbmRleCAwMDAwMDAwLi5lMmIyODdhCi0tLSAvZGV2L251bGwKKysrIGIvdmFsaWRhdGlvbi9wcm9iZS9tYWluLmdvCkBAIC0wLDAgKzEsODMgQEAKKy8vIHByb2JlIG9wZW5zIGZyZXNoIEhUVFAgY29ubmVjdGlvbnMgd2l0aG91dCBhbiBleHBsaWNpdCBwcm94eSBvciBpbnRlcmZhY2UgYmluZC4KKy8vIEl0IG9ic2VydmVzIGFwcGxpY2F0aW9uIHNvY2tldHMsIG5vdCB0aGUgY29yZSdzIHBoeXNpY2FsIGVncmVzcy4gQ29ycmVsYXRlIHdpdGgKKy8vIGEgdHJ1c3RlZCBzZXJ2ZXIgcmVzcG9uc2UgYW5kIFdpbmRvd3MgY2FwdHVyZSBiZWZvcmUgY2xhaW1pbmcgcm91dGluZy9ubyBsZWFrcy4KK3BhY2thZ2UgbWFpbgorCitpbXBvcnQgKAorCSJlbmNvZGluZy9qc29uIgorCSJmbGFnIgorCSJpbyIKKwkibmV0IgorCSJuZXQvaHR0cCIKKwkibmV0L2h0dHAvaHR0cHRyYWNlIgorCSJvcyIKKwkic3luYyIKKwkidGltZSIKKykKKwordHlwZSByZXN1bHQgc3RydWN0IHsKKwlUaW1lICAgICAgIHRpbWUuVGltZSBganNvbjoidGltZSJgCisJUElEICAgICAgICBpbnQgICAgICAgYGpzb246InBpZCJgCisJRXhlY3V0YWJsZSBzdHJpbmcgICAgYGpzb246ImV4ZWN1dGFibGUiYAorCVVSTCAgICAgICAgc3RyaW5nICAgIGBqc29uOiJ1cmwiYAorCUxvY2FsICAgICAgc3RyaW5nICAgIGBqc29uOiJhcHBsaWNhdGlvbl9sb2NhbCxvbWl0ZW1wdHkiYAorCVJlbW90ZSAgICAgc3RyaW5nICAgIGBqc29uOiJhcHBsaWNhdGlvbl9yZW1vdGUsb21pdGVtcHR5ImAKKwlTdGF0dXMgICAgIGludCAgICAgICBganNvbjoic3RhdHVzLG9taXRlbXB0eSJgCisJQm9keSAgICAgICBzdHJpbmcgICAgYGpzb246ImJvZHksb21pdGVtcHR5ImAKKwlFcnJvciAgICAgIHN0cmluZyAgICBganNvbjoiZXJyb3Isb21pdGVtcHR5ImAKK30KKworZnVuYyBwcm9iZSh1cmwgc3RyaW5nLCB0aW1lb3V0IHRpbWUuRHVyYXRpb24pIHJlc3VsdCB7CisJZXhlLCBfIDo9IG9zLkV4ZWN1dGFibGUoKQorCXIgOj0gcmVzdWx0e1RpbWU6IHRpbWUuTm93KCkuVVRDKCksIFBJRDogb3MuR2V0cGlkKCksIEV4ZWN1dGFibGU6IGV4ZSwgVVJMOiB1cmx9CisJdmFyIG11IHN5bmMuTXV0ZXgKKwl0cmFuc3BvcnQgOj0gJmh0dHAuVHJhbnNwb3J0e1Byb3h5OiBuaWwsIERpc2FibGVLZWVwQWxpdmVzOiB0cnVlLCBEaWFsQ29udGV4dDogKCZuZXQuRGlhbGVye1RpbWVvdXQ6IHRpbWVvdXR9KS5EaWFsQ29udGV4dH0KKwlkZWZlciB0cmFuc3BvcnQuQ2xvc2VJZGxlQ29ubmVjdGlvbnMoKQorCWNsaWVudCA6PSAmaHR0cC5DbGllbnR7VHJhbnNwb3J0OiB0cmFuc3BvcnQsIFRpbWVvdXQ6IHRpbWVvdXR9CisJcmVxLCBlcnIgOj0gaHR0cC5OZXdSZXF1ZXN0KGh0dHAuTWV0aG9kR2V0LCB1cmwsIG5pbCkKKwlpZiBlcnIgIT0gbmlsIHsKKwkJci5FcnJvciA9IGVyci5FcnJvcigpCisJCXJldHVybiByCisJfQorCXRyYWNlIDo9ICZodHRwdHJhY2UuQ2xpZW50VHJhY2V7R290Q29ubjogZnVuYyhpIGh0dHB0cmFjZS5Hb3RDb25uSW5mbykgeworCQltdS5Mb2NrKCkKKwkJZGVmZXIgbXUuVW5sb2NrKCkKKwkJci5Mb2NhbCA9IGkuQ29ubi5Mb2NhbEFkZHIoKS5TdHJpbmcoKQorCQlyLlJlbW90ZSA9IGkuQ29ubi5SZW1vdGVBZGRyKCkuU3RyaW5nKCkKKwl9fQorCXJlcSA9IHJlcS5XaXRoQ29udGV4dChodHRwdHJhY2UuV2l0aENsaWVudFRyYWNlKHJlcS5Db250ZXh0KCksIHRyYWNlKSkKKwlyZXNwb25zZSwgZXJyIDo9IGNsaWVudC5EbyhyZXEpCisJbXUuTG9jaygpCisJZGVmZXIgbXUuVW5sb2NrKCkKKwlpZiBlcnIgIT0gbmlsIHsKKwkJci5FcnJvciA9IGVyci5FcnJvcigpCisJCXJldHVybiByCisJfQorCWRlZmVyIHJlc3BvbnNlLkJvZHkuQ2xvc2UoKQorCXIuU3RhdHVzID0gcmVzcG9uc2UuU3RhdHVzQ29kZQorCWJvZHksIGVyciA6PSBpby5SZWFkQWxsKGlvLkxpbWl0UmVhZGVyKHJlc3BvbnNlLkJvZHksIDQwOTYpKQorCXIuQm9keSA9IHN0cmluZyhib2R5KQorCWlmIGVyciAhPSBuaWwgeworCQlyLkVycm9yID0gZXJyLkVycm9yKCkKKwl9CisJcmV0dXJuIHIKK30KKworZnVuYyBtYWluKCkgeworCXVybCA6PSBmbGFnLlN0cmluZygidXJsIiwgIiIsICJ0cnVzdGVkIEhUVFAoUykgSVAtZWNoby90ZXN0IGVuZHBvaW50IChyZXF1aXJlZCkiKQorCWNvdW50IDo9IGZsYWcuSW50KCJjb3VudCIsIDEsICJmcmVzaCByZXF1ZXN0cywgMCByZXBlYXRzIHVudGlsIGludGVycnVwdGVkIikKKwlpbnRlcnZhbCA6PSBmbGFnLkR1cmF0aW9uKCJpbnRlcnZhbCIsIHRpbWUuU2Vjb25kLCAiZGVsYXkgYmV0d2VlbiByZXF1ZXN0cyIpCisJdGltZW91dCA6PSBmbGFnLkR1cmF0aW9uKCJ0aW1lb3V0IiwgNSp0aW1lLlNlY29uZCwgInBlci1yZXF1ZXN0IHRpbWVvdXQiKQorCWZsYWcuUGFyc2UoKQorCWlmICp1cmwgPT0gIiIgfHwgKmNvdW50IDwgMCB7CisJCWZsYWcuVXNhZ2UoKQorCQlvcy5FeGl0KDIpCisJfQorCWVuYyA6PSBqc29uLk5ld0VuY29kZXIob3MuU3Rkb3V0KQorCWZvciBpIDo9IDA7ICpjb3VudCA9PSAwIHx8IGkgPCAqY291bnQ7IGkrKyB7CisJCV8gPSBlbmMuRW5jb2RlKHByb2JlKCp1cmwsICp0aW1lb3V0KSkKKwkJaWYgKmNvdW50ID09IDAgfHwgaSsxIDwgKmNvdW50IHsKKwkJCXRpbWUuU2xlZXAoKmludGVydmFsKQorCQl9CisJfQorfQpkaWZmIC0tZ2l0IGEvdmFsaWRhdGlvbi9wcm9iZS9tYWluX3Rlc3QuZ28gYi92YWxpZGF0aW9uL3Byb2JlL21haW5fdGVzdC5nbwpuZXcgZmlsZSBtb2RlIDEwMDY0NAppbmRleCAwMDAwMDAwLi5lZDFiMDNkCi0tLSAvZGV2L251bGwKKysrIGIvdmFsaWRhdGlvbi9wcm9iZS9tYWluX3Rlc3QuZ28KQEAgLTAsMCArMSwzMiBAQAorcGFja2FnZSBtYWluCisKK2ltcG9ydCAoCisJIm5ldC9odHRwIgorCSJuZXQvaHR0cC9odHRwdGVzdCIKKwkidGVzdGluZyIKKwkidGltZSIKKykKKworZnVuYyBUZXN0UHJvYmVTdWNjZXNzKHQgKnRlc3RpbmcuVCkgeworCXNlcnZlciA6PSBodHRwdGVzdC5OZXdTZXJ2ZXIoaHR0cC5IYW5kbGVyRnVuYyhmdW5jKHcgaHR0cC5SZXNwb25zZVdyaXRlciwgciAqaHR0cC5SZXF1ZXN0KSB7IHcuV3JpdGUoW11ieXRlKCIxMjcuMC4wLjEiKSkgfSkpCisJZGVmZXIgc2VydmVyLkNsb3NlKCkKKwl0LlNldGVudigiSFRUUF9QUk9YWSIsICJodHRwOi8vMTI3LjAuMC4xOjEiKQorCXIgOj0gcHJvYmUoc2VydmVyLlVSTCwgdGltZS5TZWNvbmQpCisJaWYgci5FcnJvciAhPSAiIiB8fCByLlN0YXR1cyAhPSAyMDAgfHwgci5Cb2R5ICE9ICIxMjcuMC4wLjEiIHx8IHIuTG9jYWwgPT0gIiIgfHwgci5SZW1vdGUgPT0gIiIgfHwgci5FeGVjdXRhYmxlID09ICIiIHsKKwkJdC5GYXRhbGYoIiUrdiIsIHIpCisJfQorfQorZnVuYyBUZXN0UHJvYmVFcnJvcih0ICp0ZXN0aW5nLlQpIHsKKwlyIDo9IHByb2JlKCI6IiwgdGltZS5TZWNvbmQpCisJaWYgci5FcnJvciA9PSAiIiB7CisJCXQuRmF0YWwoIm1pc3NpbmcgaW52YWxpZCBVUkwgZXJyb3IiKQorCX0KK30KK2Z1bmMgVGVzdFByb2JlVGltZW91dCh0ICp0ZXN0aW5nLlQpIHsKKwlzZXJ2ZXIgOj0gaHR0cHRlc3QuTmV3U2VydmVyKGh0dHAuSGFuZGxlckZ1bmMoZnVuYyh3IGh0dHAuUmVzcG9uc2VXcml0ZXIsIHIgKmh0dHAuUmVxdWVzdCkgeyA8LXIuQ29udGV4dCgpLkRvbmUoKSB9KSkKKwlkZWZlciBzZXJ2ZXIuQ2xvc2UoKQorCXIgOj0gcHJvYmUoc2VydmVyLlVSTCwgMjAqdGltZS5NaWxsaXNlY29uZCkKKwlpZiByLkVycm9yID09ICIiIHsKKwkJdC5GYXRhbCgibWlzc2luZyB0aW1lb3V0IGVycm9yIikKKwl9Cit9Cg==' | base64 -d > validation.patch
+          git -C sing-box-local apply --check ../process-windows.patch
+          git -C sing-box-local apply ../process-windows.patch
+          git apply --check validation.patch
+          git apply validation.patch
+          cd core
+          go mod edit -replace github.com/sagernet/sing-box=../sing-box-local
+          cd ..
+          python - <<'PYCODE'
+          from pathlib import Path
+          s=Path('script/windows_installer.iss').read_text()
+          s=s.replace('AppVerName=Throne {#AppVersion}', 'AppVerName=Throne {#AppVersion} (custom process routing candidate)')
+          s=s.replace('ArchitecturesInstallIn64BitMode=win64', 'ArchitecturesAllowed=x64os\nArchitecturesInstallIn64BitMode=x64os\nMinVersion=10.0.17763')
+          s='\n'.join(l for l in s.splitlines() if not l.startswith('Source: "deployment\\windowslegacy') and not l.startswith('Source: "deployment\\windows-arm64'))+'\n'
+          Path('script/windows_installer_x64.iss').write_text(s)
+          # Exercise the actual parser copied verbatim from this pinned source, not a reimplementation.
+          src=Path('src/ui/mainWindow/mainwindow_system.cpp').read_text()
+          start=src.index('using Version = std::array<int, 5>;')
+          end=src.index('bool isNewer(',start)
+          parser=src[start:end]
+          test='#include <array>\n#include <optional>\n#include <QString>\n#include <QRegularExpression>\n'+parser+'\nint main(){ auto old=parseVersion("1.4.1"); auto current=parseVersion("1.4.2-alpha.1"); auto next=parseVersion("1.4.2"); return (!old || !current || !next || !(*old < *current && *current < *next)) ? 1 : 0; }\n'
+          Path('version_compare_test.cpp').write_text(test)
+          with Path('CMakeLists.txt').open('a') as f:
+              f.write('\nadd_executable(version_compare_test version_compare_test.cpp)\ntarget_link_libraries(version_compare_test PRIVATE Qt6::Core)\n')
+          PYCODE
+      - name: Native Windows matching and WFP rule-construction tests
+        run: |
+          set -euo pipefail
+          mkdir -p test-results
+          (cd sing-box-local && go test -v ./route/rule) 2>&1 | tee test-results/process-tests.txt
+          (cd core && go test -v ./internal/guard) 2>&1 | tee test-results/guard-construction-tests.txt
+          (cd validation/probe && go test -v ./... && go build -o ../routing-probe.exe .) 2>&1 | tee test-results/probe-tests.txt
+      - name: Install protoc generators and compile core
+        run: |
+          set -euo pipefail
+          curl -fLso "$RUNNER_TEMP/protoc.zip" https://github.com/protocolbuffers/protobuf/releases/download/v36.2/protoc-36.2-win64.zip
+          unzip -q "$RUNNER_TEMP/protoc.zip" -d "$RUNNER_TEMP/protoc"
+          export PATH="$RUNNER_TEMP/protoc/bin:$(go env GOPATH)/bin:$PATH"
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
+          export DEST="$PWD/deployment/windows-amd64"
+          bash script/build_go.sh
+      - name: Checkout dashboard
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: SagerNet/sing-box-dashboard
+          ref: gh-pages
+          path: dashboard-src
+          persist-credentials: false
+      - name: Configure MSVC x64
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -prerelease -property installationPath
+          if (-not $vs) { throw 'Visual Studio not found' }
+          $bat = Join-Path $env:RUNNER_TEMP 'vcvars.cmd'
+          Set-Content -LiteralPath $bat -Encoding ascii -Value "@call `"$vs\VC\Auxiliary\Build\vcvarsall.bat`" x64 >nul && set"
+          $vars = & $bat
+          if (-not ($vars -ceq 'VSCMD_ARG_TGT_ARCH=x64')) { throw 'MSVC x64 environment failed' }
+          foreach ($line in $vars) {
+            $name, $value = $line -split '=', 2
+            if ($null -ne $value -and $value -cne [Environment]::GetEnvironmentVariable($name)) { Add-Content -LiteralPath $env:GITHUB_ENV -Value "$name=$value" }
+          }
+      - name: Compile matching pinned GUI and version comparison test
+        run: |
+          set -euo pipefail
+          rm -rf dashboard-src/.git
+          cp -R dashboard-src/. res/dashboard/
+          test -f res/dashboard/index.html
+          curl -fLso qt.7z https://github.com/throneproj/buildqt/releases/download/Qt_6.12.0/Qt_6.12.0_x64.7z
+          curl -fLso openssl.7z https://github.com/throneproj/env_windows_legacy/releases/download/latest/openssl_x64.7z
+          7z x -y qt.7z > /dev/null
+          7z x -y openssl.7z > /dev/null
+          export CMAKE_PREFIX_PATH="$PWD/Qt/lib/cmake"
+          export OPENSSL_ROOT_DIR="$PWD/openssl"
+          mkdir -p build
+          curl -fLso build/srslist.h https://raw.githubusercontent.com/throneproj/routeprofiles/rule-set/srslist.h
+          cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DINPUT_VERSION="$INPUT_VERSION"
+          cmake --build build --parallel 4
+          cp build/Throne.exe deployment/windows-amd64/
+          build/version_compare_test.exe
+      - name: Verify GUI version without starting networking
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD 'deployment/windows-amd64/Throne.exe'
+          $out = Join-Path $PWD 'test-results/version.txt'
+          $err = Join-Path $PWD 'test-results/version-stderr.txt'
+          $p = Start-Process -FilePath $exe -ArgumentList '--headless','--version' -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
+          if (-not $p.WaitForExit(30000)) { $p.Kill(); throw 'Version smoke test timed out' }
+          if ($p.ExitCode -ne 0) { throw "Version smoke test exit $($p.ExitCode)" }
+          $version = (Get-Content -Raw $out).Trim()
+          if ($version -ne 'Throne 1.4.2-alpha.1') { throw "Unexpected version: $version" }
+      - name: Build x64 installer and checksums
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw 'Official Inno Setup 6 compiler missing from runner' }
+          $notes = @'
+          Custom experimental Windows x64 build 1.4.2-alpha.1.
+          GUI and core: throneproj/Throne f52f3769e645a589feac9911753fa28392dc2702.
+          sing-box: 9c9776a477b6946ccce4fd4f8b93943056e997ea plus process-windows.patch.
+          Native matcher tests, WFP rule-construction tests, GUI version startup and version comparison run in this workflow.
+          Clean installation and same-version reinstallation smoke tests are included; see workflow result and installer logs.
+          Migration from official1.4.1 or the user existing version was NOT tested.
+          Actual TUN/WFP traffic, DNS, crash and disconnect leak tests were NOT performed.
+          Back up configuration before installing. Do not uninstall first. Use existing installation directory.
+          Official updater endpoint remains unchanged. Future official stable1.4.2 compares newer and replaces custom core.
+          '@
+          Set-Content -Encoding utf8 deployment/windows-amd64/BUILD-INFO.txt $notes
+          & $iscc /Q /DAppVersion=1.4.2-alpha.1 /DAppVersionMajor=1 /DAppVersionMinor=4 /DAppVersionPatch=2 /DAppVersionBuild=0 /FThrone-1.4.2-alpha.1-windows-x64-installer script/windows_installer_x64.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
+          $installer = 'deployment/Throne-1.4.2-alpha.1-windows-x64-installer.exe'
+          $hash = (Get-FileHash -Algorithm SHA256 $installer).Hash.ToLower()
+          "$hash  Throne-1.4.2-alpha.1-windows-x64-installer.exe" | Set-Content -Encoding ascii deployment/SHA256SUMS.txt
+      - name: Native installer and same-version reinstall smoke test
+        shell: pwsh
+        run: |
+          $setup = Join-Path $PWD 'deployment/Throne-1.4.2-alpha.1-windows-x64-installer.exe'
+          $install = Join-Path $env:RUNNER_TEMP 'Throne'
+          $logs = Join-Path $PWD 'test-results'
+          foreach ($round in 1..2) {
+            $log = Join-Path $logs "installer-round-$round.log"
+            $args = @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', "/DIR=`"$install`"", "/LOG=`"$log`"")
+            $p = Start-Process -FilePath $setup -ArgumentList $args -PassThru
+            if (-not $p.WaitForExit(120000)) { $p.Kill(); throw "Installer round $round timed out" }
+            if ($p.ExitCode -ne 0) { throw "Installer round $round exit $($p.ExitCode)" }
+            foreach ($name in @('Throne.exe','ThroneCore.exe','updater.exe','libcronet.dll')) {
+              $expected = (Get-FileHash -Algorithm SHA256 (Join-Path 'deployment/windows-amd64' $name)).Hash
+              $actual = (Get-FileHash -Algorithm SHA256 (Join-Path $install $name)).Hash
+              if ($expected -ne $actual) { throw "Installed $name differs from build" }
+            }
+            $marker = Join-Path $install 'config/config-preservation.marker'
+            if ($round -eq 1) {
+              New-Item -ItemType Directory -Force (Split-Path $marker) | Out-Null
+              Set-Content -Encoding ascii $marker 'preserve-this-custom-install-test'
+            } elseif ((Get-Content -Raw $marker).Trim() -ne 'preserve-this-custom-install-test') {
+              throw 'Reinstall changed the config preservation marker'
+            }
+          }
+          'Installer and same-version reinstall passed. This does not test migration from official1.4.1 or real user settings.' | Set-Content -Encoding utf8 test-results/installer-smoke.txt
+      - name: Upload installer, patches and validation evidence
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: Throne-1.4.2-alpha.1-windows-x64-candidate
+          if-no-files-found: error
+          path: |
+            deployment/*installer.exe
+            deployment/SHA256SUMS.txt
+            deployment/windows-amd64/BUILD-INFO.txt
+            process-windows.patch
+            validation.patch
+            script/windows_installer_x64.iss
+            validation/WINDOWS-INTEGRATION.md
+            validation/routing-probe.exe
+            test-results/
